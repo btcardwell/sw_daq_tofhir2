@@ -227,8 +227,20 @@ for vth1 in vth1_list:
                                 sleep(0.1)
                                 print "ov: %3.1f,   vth1: %2d,   vth2: %2d,   vthe: %2d" % (float(ov), int(vth1), int(vth2), int(vthe))
                                 daqd.acquire(args.time, float(ov), 10000*(int(vth1)+1)+100*(int(vth2)+1)+int(vthe)+1)
-                                        
+
+
+#-------------------------
+# switch off bias voltages
 systemConfig.loadToHardware(daqd, bias_enable=config.APPLY_BIAS_OFF)
+
+if args.aldo:
+        for portID, slaveID, chipID in activeAsics:
+                if chipID%2 is not 0:
+                        continue
+                gc = (cfg[(portID, slaveID, chipID)]).globalConfig
+                gc.setValue("c_aldo_en", 0b00)
+daqd.setAsicsConfig(cfg)                                                                                                                                                                                                                     
+
 daqd.setTestPulseNone()
 
 
