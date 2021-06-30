@@ -286,6 +286,11 @@ class Config:
                 print("ALDO A(J2) on ASIC%d:   DAC: %d   V: %f") %(chipID,int(retA),float(self.__ALDOACalibrationTable[(portID, slaveID, chipID)][retA]))
                 print("ALDO B(J4) on ASIC%d:   DAC: %d   V: %f") %(chipID,int(retB),float(self.__ALDOBCalibrationTable[(portID, slaveID, chipID)][retB]))
                 return retA, retB
+
+	def mapALDODACToVoltage(self, (portID, slaveID, chipID), dac):
+                retA = float(self.__ALDOACalibrationTable[(portID, slaveID, chipID)][dac])
+                retB = float(self.__ALDOBCalibrationTable[(portID, slaveID, chipID)][dac])
+                return retA, retB
                         
 def toInt(s):
 	s = s.upper()
