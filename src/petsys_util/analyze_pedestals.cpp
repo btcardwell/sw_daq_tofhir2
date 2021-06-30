@@ -36,7 +36,7 @@ int main(int argc, char** argv)
     
     unsigned int channelID;
     unsigned short int tacID;
-    unsigned short qfine;
+    float qfine;
     
     data -> SetBranchStatus("*",0);
     data -> SetBranchStatus("channelID",1); data -> SetBranchAddress("channelID",&channelID);
