@@ -1,0 +1,91 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+import sys
+from petsys import daqd, config
+from copy import deepcopy
+import argparse
+import serial
+from time import sleep
+
+sys.path.append("/home/cmsdaq/Programs/Lab5015Utils/")
+from Lab5015_utils_p2 import Keithley2450
+
+
+
+def main(argv):
+
+	parser = argparse.ArgumentParser(description='Acquire data for TDC calibration')
+	parser.add_argument("--config", type=str, required=True, help="Configuration file")
+	parser.add_argument("-o", type=str, dest="fileNamePrefix", required=True, help="Data filename (prefix)")
+	args = parser.parse_args()
+
+	mask = config.LOAD_ALL
+	mask ^= config.LOAD_QDCMODE_MAP
+	systemConfig = config.ConfigFromFile(args.config, loadMask=mask)
+	
+        mykey = Keithley2450()
+        
+	conn = daqd.Connection()
+	conn.initializeSystem()
+	systemConfig.loadToHardware(conn, bias_enable=config.APPLY_BIAS_ON, hw_trigger_enable=False, qdc_mode = "tot")
+
+
+	hvdac_config = conn.get_hvdac_config()
+
+	for portID, slaveID, railID in hvdac_config.keys():
+		print portID, slaveID, railID
+		hvdac_config[(portID, slaveID, railID)] = systemConfig.mapBiasChannelVoltageToDAC((portID, slaveID, railID), 45)
+
+	conn.set_hvdac_config(hvdac_config)
+
+	asicsConfig = conn.getAsicsConfig()
+	for ac in asicsConfig.values():
+		gc = ac.globalConfig
+		gc.setValue("c_aldo_en", 0b11)
+		gc.setValue("c_aldo_range", 0b00)
+
+		#aldo_dac_gain = 0
+		#gc.setValue("Valdo_A_Gain", aldo_dac_gain)
+		#gc.setValue("Valdo_A_DAC", 255)
+		#gc.setValue("Valdo_B_Gain", aldo_dac_gain)
+		#gc.setValue("Valdo_B_DAC", 255)
+
+	conn.setAsicsConfig(asicsConfig)
+
+	asicsConfig0 = deepcopy(asicsConfig)	
+	for which_aldo in  ['A', 'B']:
+		print "Connect to ALDO %s" % which_aldo
+		raw_input("Press ENTER to continue")
+
+		for aldo_range in [ "low", "high" ]:
+
+			f = open("%s_ALDO_%s_%s.tsv" % (args.fileNamePrefix, which_aldo, aldo_range), "w") 
+			
+			asicsConfig = deepcopy(asicsConfig)
+			for dac in range(0, 256, 1):
+				for ac in asicsConfig.values():
+					gc = ac.globalConfig
+					gc.setValue("Valdo_%s_DAC" % which_aldo, dac)
+					if aldo_range == "low":
+						gc.setValue("Valdo_%s_Gain" % which_aldo, 0)
+					elif aldo_range == "high":
+						gc.setValue("Valdo_%s_Gain" % which_aldo, 1)
+					else:
+						raise "aldo range has bad value %s" % aldo_range
+				
+				conn.setAsicsConfig(asicsConfig)
+                                if dac is 0:
+                                        sleep(2.)
+                                else:
+                                        sleep(0.2)
+                                
+				(_, voltage) = mykey.meas_V()
+				print which_aldo, dac, float(voltage)
+				f.write("%d\t%f\n" % (dac, float(voltage)))
+			f.close()
+	
+
+
+if __name__ == '__main__':
+	sys.exit(main(sys.argv))

@@ -63,12 +63,12 @@ if( args.fixChannels ):
         args.fixChannels = args.fixChannels.split(',')
 
 if not args.fileNamePrefix:
-        with open('/data/TOFHIR2/last_run') as f:
+        with open('/storage/TOFHIR2/last_run') as f:
                 run = [int(x) for x in next(f).split()]
-                os.remove('/data/TOFHIR2/last_run')
-                with open('/data/TOFHIR2/last_run','w+') as f:
+                os.remove('/storage/TOFHIR2/last_run')
+                with open('/storage/TOFHIR2/last_run','w+') as f:
                         f.write(str(run[0]+1))
-        args.fileNamePrefix = "/data/TOFHIR2/raw/run%04d" % (run[0]+1)
+        args.fileNamePrefix = "/storage/TOFHIR2/raw/run%04d" % (run[0]+1)
 
 if args.pedestals:
         print("INFO: acquiring pedestals")
@@ -90,6 +90,11 @@ systemConfig.loadToHardware(daqd, bias_enable=config.APPLY_BIAS_ON)
 
 asicsConfig = daqd.getAsicsConfig()
 activeAsics = daqd.getActiveAsics()
+
+if len(activeAsics) == 0:
+        print "no active ASICs found. Exiting..."
+        exit()
+
 
 
 #--------------
@@ -216,12 +221,12 @@ for vth1 in vth1_list:
                                         for portID, slaveID, chipID in activeAsics:
                                                 if chipID%2 is not 0:
                                                         continue
-                                                bd, over__ = systemConfig.getBiasChannelDefaultSettingsAldo((portID, slaveID, chipID))
                                                 gc = (cfg[(portID, slaveID, chipID)]).globalConfig
-                                                dac_A, dac_B = systemConfig.mapALDOVoltageToDAC((portID, slaveID, chipID),bd,float(ov))
                                                 gc.setValue("c_aldo_en", 0b11)
-                                                gc.setValue("Valdo_A_DAC", dac_A)
-                                                gc.setValue("Valdo_B_DAC", dac_B)
+                                                for aldoID in ['A', 'B']:
+                                                        bd, over__ = systemConfig.getBiasChannelDefaultSettingsAldo((portID, slaveID, chipID, aldoID))
+                                                        dac = systemConfig.mapALDOVoltageToDAC((portID, slaveID, chipID, aldoID),bd,float(ov))
+                                                        gc.setValue("Valdo_%s_DAC"%aldoID, dac)
                                                 
                                 daqd.setAsicsConfig(cfg)
                                 sleep(0.1)
