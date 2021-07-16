@@ -158,8 +158,9 @@ for thresholdIndex, thresholdName, baselineName in thresholdList:
 				# Write out fraction of discriminator active time
 				v = daqd.read_mem_ctrl(portID, slaveID, 5, 8, 24, 32*chipID + channelID, 1)
 				v = v[0]
-				v = v / COUNT_MAX
-				outFile.write("%d\t%d\t%d\t%d\t%s\t%d\t%f\n" % (portID, slaveID, chipID, channelID, thresholdName, thresholdValue, v))
+				#v = v / COUNT_MAX
+                                outFile.write("%d\t%d\t%d\t%d\t%s\t%d\t%d\t%d\n" % (portID, slaveID, chipID, channelID, thresholdName, thresholdValue, v, COUNT_MAX))
+				#outFile.write("%d\t%d\t%d\t%d\t%s\t%d\t%f\n" % (portID, slaveID, chipID, channelID, thresholdName, thresholdValue, v))
 
 		stdout.write(".")
 		stdout.flush()

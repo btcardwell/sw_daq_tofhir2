@@ -1,0 +1,203 @@
+#!/usr/bin/env python
+
+from petsys import daqd, config
+from copy import deepcopy
+from time import sleep
+import argparse
+import os
+import ROOT
+import sys
+import math
+from datetime import datetime
+from ROOT import TFile
+
+sys.path.insert(1, os.path.join(sys.path[0], '/home/cmsdaq/DAQ/K2000'))
+from K2000Wrapper import K2000
+
+
+
+parser = argparse.ArgumentParser(description='Acquire SiPM IV scan')
+parser.add_argument("--config", type=str, required=True, help="Configuration file")
+parser.add_argument("--asic", type=int, required=True, help="ASIC ID")
+parser.add_argument("--bvMin", type=str, dest="bvMin", required=True, help="starting bv")
+parser.add_argument("--bvMax", type=str, dest="bvMax", required=True, help="ending bv")
+parser.add_argument("--aldoA", dest="aldoA", action="store_true", help="do aldo A")
+parser.add_argument("--aldoB", dest="aldoB", action="store_true", help="do aldo B")
+parser.add_argument("--ch", type=str, dest="ch", required=True, help="which channel of the keithley to measure")
+parser.add_argument("--nMeas", type=str, dest="nMeas", required=False, help="number of measurements to average")
+parser.add_argument("--verbose", dest="verb", action="store_true", help="set to true to display output and plots, otherwise just save to root file")
+
+
+#------------------------
+# parsing input arguments
+args = parser.parse_args()
+verbose = False
+if args.verb:
+    verbose = True
+
+
+#---------------------------------
+# connect and configure multimeter
+keithley = K2000('tcp://raspcmsroma01:8820')
+print("logging SiPM current from Keithley channel number %d "%(int(args.ch)))
+keithley.selectChannel(int(args.ch))
+
+
+#-----------------------------
+# load configuration from file
+mask = config.LOAD_ALL
+# if args.mode != "mixed":
+#         mask ^= config.LOAD_QDCMODE_MAP
+mask ^= config.LOAD_QDCMODE_MAP
+systemConfig = config.ConfigFromFile(args.config, loadMask=mask)
+
+daqd = daqd.Connection()
+daqd.initializeSystem()
+systemConfig.loadToHardware(daqd, bias_enable=config.APPLY_BIAS_OFF)
+
+asicsConfig = daqd.getAsicsConfig()
+activeAsics = daqd.getActiveAsics()
+
+if len(activeAsics) == 0:
+    print ("no active ASICs found. Exiting...")
+    exit()
+    
+asicsConfig0 = deepcopy(asicsConfig)
+cfg = deepcopy(asicsConfig0)
+
+for portID, slaveID, chipID in activeAsics:
+        if chipID%2 is not 0:
+                continue
+        if int(chipID) != args.asic:
+            continue
+
+        ac = cfg[(portID, slaveID, chipID)]
+        gc = (cfg[(portID, slaveID, chipID)]).globalConfig
+        gc.setValue("c_aldo_en", 0b00)
+        daqd.setAsicsConfig(cfg)
+        sleep(0.1)
+        stdout = keithley.getMeasure()
+        
+        sleep(0.1)
+        print( "ALDO off   I: %f uA" % (abs(float(stdout.strip()))*1E06/10.))
+
+
+#--------------
+# define graphs
+g_I = ROOT.TGraph()
+g_IV = ROOT.TGraph()
+g_dlogIdV = ROOT.TGraph()
+
+
+#--------
+# ov scan
+for portID, slaveID, chipID in activeAsics:
+        if chipID%2 is not 0:
+                continue
+        if int(chipID) != args.asic:
+            continue
+        
+        ac = cfg[(portID, slaveID, chipID)]
+        for dac in range(0,256,1):
+                voltA, voltB = systemConfig.mapALDODACToVoltage((portID, slaveID, chipID),dac)
+                volt = 0.
+                
+                gc = (cfg[(portID, slaveID, chipID)]).globalConfig
+                if args.aldoA and not args.aldoB:
+                        gc.setValue("c_aldo_en", 0b10)
+                        gc.setValue("Valdo_A_DAC", dac)
+                        volt = float(voltA)
+                if args.aldoB and not args.aldoA:
+                        gc.setValue("c_aldo_en", 0b01)
+                        gc.setValue("Valdo_B_DAC", dac)
+                        volt = float(voltB)
+                daqd.setAsicsConfig(cfg)
+                
+                if volt < float(args.bvMin):
+                        continue
+                if volt > float(args.bvMax):
+                        break
+                
+                sleep(1.)
+                        
+                curr  = 0.
+                vMeas = 0.
+                nMeas = 1
+                if args.nMeas:
+                    nMeas = int(args.nMeas)
+                it = 0
+                for _ in range(nMeas):
+                        stdout = keithley.getMeasure()
+                        this_volt = abs(float(stdout.strip()))
+                        this_curr = this_volt*1E06/10.
+                        if verbose:
+                            print ("dac: %3d   V_set: %6.3f V   V_meas: %f V -->  I: %f uA" % (int(dac),volt,this_volt,this_curr))
+                            #print ("dac: %3d   V_set: %6.3f V   V_meas: %f V" % (int(dac),volt,this_volt))
+                        g_I.SetPoint(g_I.GetN(),g_I.GetN(),this_curr)
+                        #g_IV.SetPoint(g_IV.GetN(),g_IV.GetN(),this_volt)
+                        
+                        if it >= 0:
+                                curr = curr + this_curr
+                                vMeas = vMeas + this_volt
+                        it += 1
+                        sleep(0.2)
+                
+                curr  = curr  / nMeas
+                vMeas = vMeas / nMeas
+                g_IV.SetPoint(g_IV.GetN(),volt, curr)
+                print( "===> dac: %3.0d   V_set: %6.3f V_meas: %6.3f V -->  I: %f uA" % (int(dac),volt,vMeas,curr))
+                #g_IV.SetPoint(g_IV.GetN(),volt, vMeas)
+                #print( "%3.0d\t%f" % (int(dac),vMeas))
+
+
+#-------------------------
+# switch off bias voltages
+
+for portID, slaveID, chipID in activeAsics:
+        if chipID%2 is not 0:
+                continue
+        gc = (cfg[(portID, slaveID, chipID)]).globalConfig
+        gc.setValue("c_aldo_en", 0b00)
+daqd.setAsicsConfig(cfg)                                                                                                                                           
+
+
+
+#---------
+# plotting
+for point in range(1,g_IV.GetN()):
+    x1 = g_IV.GetPointX(point-1)
+    x2 = g_IV.GetPointX(point)
+    y1 = g_IV.GetPointY(point-1)
+    y2 = g_IV.GetPointY(point)
+    g_dlogIdV.SetPoint(g_dlogIdV.GetN(),0.5*(x1+x2),(math.log(y2)-math.log(y1))/(x2-x1))
+    
+if verbose:
+    c1 = ROOT.TCanvas("c1","c1",500,500)
+    g_I.SetTitle("I vs i measurement;i measurement;current")
+    g_I.Draw("APL")
+    
+    c2 = ROOT.TCanvas("c2","c2",500,500)
+    g_IV.SetTitle("I vs volt;volt [V]; I [#muA]")
+    g_IV.Draw("APL")
+    
+    c3 = ROOT.TCanvas("c3","c3",500,500)
+    g_dlogIdV.SetTitle("dlogIdV vs volt;volt [V]; #DeltalogI/#deltaV [#muA/V]")
+    g_dlogIdV.Draw("APL")
+    
+    raw_input("ok?")
+
+now = datetime.now()
+this_time = now.strftime('%Y-%m-%d_%H:%M:%S')
+outfile_name = ("../log_IV/IV_ch%d_time_%s.root"%(int(args.ch),this_time))
+print('saving data to: %s' % outfile_name)
+
+outFile = TFile(outfile_name,"RECREATE")
+outFile.cd()
+g_I.SetName("g_I")
+g_I.Write()
+g_IV.SetName("g_IV")
+g_IV.Write()
+g_dlogIdV.SetName("g_dlogIdV")
+g_dlogIdV.Write()
+outFile.Write()
+outFile.Close()

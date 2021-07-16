@@ -17,51 +17,38 @@ fSigmoid = ROOT.TF1("fSigmoid","1-[0]*ROOT::Math::normal_cdf(x,[1],[2])",0,64);
 fSigmoid.SetParName(0, "C")
 fSigmoid.SetParName(1, "#sigma")
 fSigmoid.SetParName(2, "x0")
-fSigmoid.SetNpx(64)
+fSigmoid.SetNpx(64*8)
 
+def FindLastPointAbove(graph, thr):
+        value = 0.
+        for point in range(graph.GetN()):
+                if graph.GetPointY(point) > thr:
+                        value = graph.GetPointX(point)
+        return value
 
 def getBaselineAndNoise(profile):
-	low = profile.GetBinCenter(profile.FindLastBinAbove(0.9)) - 0.5
-	high = profile.GetBinCenter(profile.FindLastBinAbove(0.1)) + 0.5
+	low = FindLastPointAbove(profile,0.9) - 0.5
+	high = FindLastPointAbove(profile,0.1) + 0.5
 
 	fSigmoid.FixParameter(0, 1.0);
 
-	fSigmoid.SetParameter(1, high-low);
-	fSigmoid.SetParLimits(1, 0.05, high-low)
+	fSigmoid.SetParLimits(1, 0.05, 2.*(high-low))
+	fSigmoid.SetParameter(1, (high-low)/5.);
 
-	fSigmoid.SetParameter(2, (low+high)/2.0)
 	fSigmoid.SetParLimits(2, low, high)
+	fSigmoid.SetParameter(2, (low+high)/2.0)
 
-	profile.Fit("fSigmoid", "", "", 0, 64)
+	profile.Fit("fSigmoid", "QRS+", "", 0, 64)
 	f = profile.GetFunction("fSigmoid")
 
 	if f:
-			zero= f.GetParameter(2)
-			noise = f.GetParameter(1)
+                zero= f.GetParameter(2)
+                noise = f.GetParameter(1)
 	else:
 		print "WARNING: No fit for %s" % profile.GetName()
 		zero = (low+high)/2.0
 		noise = 0.05
-
-	return zero, noise
-
-def getThresholdForRate(profile, rate):
-	threshold = profile.FindFirstBinAbove(rate) - profile.FindBin(0)
-	if threshold > 63:
-		return 0
-	elif threshold < 0:
-		return 0
-	else:
-		return threshold
-
-def getDarkWidth(profile, baseline):
-	maxBin = profile.GetMaximumBin()
-	while profile.GetBinCenter(maxBin) > baseline:
-		maxBin -= 1
-
-	rate1pe = profile.GetBinContent(maxBin)
-	t1 = profile.GetBinCenter(profile.FindFirstBinAbove(0.5 * rate1pe))
-	return baseline - t1
+  	return zero, noise
 
 def main(argv):
 
@@ -71,13 +58,13 @@ def main(argv):
 	parser.add_argument("-o", type=str, dest="outFileName", required=True, help="Output table file name")
 	parser.add_argument("--root-file", dest="rootFileName", help="Output ROOT file name")
 	args = parser.parse_args()
-
-
+        
+        
 	rootFile = None
 	if args.rootFileName:
 		rootFile = ROOT.TFile(args.rootFileName, "RECREATE")
-
-
+        
+        
 	baselineSettings = {}
 	activeChannels = set()
         activeChips = set()
@@ -93,19 +80,25 @@ def main(argv):
 
 	activeChannels = [ x for x in activeChannels ] # Convert to list
 	activeChannels.sort() # and sort the list
-
+        
         activeChips = [ x for x in activeChips ] # Convert to list
 	activeChips.sort() # and sort the list
         
         print activeChips
-
+        
+        totCounts = {}
+        passCounts = {}
 	noiseProfiles = {}
 	for portID, slaveID, chipID, channelID in activeChannels:
 		for thresholdName in ["cfg_a3_vth_t1", "cfg_a3_vth_t2", "cfg_a3_vth_e"]:
 			hName = "hNoise_%02d_%02d_%02d_%02d_%s" % (portID, slaveID, chipID, channelID, thresholdName)
-			hTitle = "Noise (%02d %02d %02d %02d) %s" % (portID, slaveID, chipID, channelID, thresholdName)
-			noiseProfiles[(portID, slaveID, chipID, channelID, thresholdName)] = ROOT.TProfile(hName, hTitle, 64, 0, 64)
-
+			noiseProfiles[(portID, slaveID, chipID, channelID, thresholdName)] = ROOT.TGraphAsymmErrors()
+                        noiseProfiles[(portID, slaveID, chipID, channelID, thresholdName)].SetName(hName)
+			hName = "hPass_%02d_%02d_%02d_%02d_%s" % (portID, slaveID, chipID, channelID, thresholdName)
+                        passCounts[(portID, slaveID, chipID, channelID, thresholdName)] = ROOT.TH1F(hName,"",64,-0.5,63.5)
+			hName = "hTot_%02d_%02d_%02d_%02d_%s" % (portID, slaveID, chipID, channelID, thresholdName)
+                        totCounts[(portID, slaveID, chipID, channelID, thresholdName)] = ROOT.TH1F(hName,"",64,-0.5,63.5)
+        
 	inputFile = open(args.inputFilePrefix + "_noise.tsv")
 	for line in inputFile:
 		line = normalizeAndSplit(line)
@@ -113,17 +106,28 @@ def main(argv):
 		portID, slaveID, chipID, channelID = [ int(v) for v in line[0:4] ]
 		thresholdName = line[4]
 		thresholdValue = int(line[5])
-		v = float(line[6])
-		noiseProfiles[ (portID, slaveID, chipID, channelID, thresholdName)].Fill(thresholdValue, v)
+		p = float(line[6])
+		t = float(line[7])
+                passCounts[(portID, slaveID, chipID, channelID, thresholdName)].Fill(thresholdValue,p)
+                totCounts[(portID, slaveID, chipID, channelID, thresholdName)].Fill(thresholdValue,t+1)
 	inputFile.close()
-
+        
+        for key in totCounts:
+                portID, slaveID, chipID, channelID = [ int(v) for v in key[0:4] ]
+                thresholdName = key[4]
+		noiseProfiles[key].Divide(passCounts[key],totCounts[key],"n")
+                for point in range(noiseProfiles[key].GetN()):
+                        noiseProfiles[key].SetPointEXhigh(point,0.)
+                        noiseProfiles[key].SetPointEXlow(point,0.)
+                
 	darkProfiles = {}
 	for portID, slaveID, chipID, channelID in activeChannels:
 		for thresholdName in ["cfg_a3_vth_t1", "cfg_a3_vth_t2", "cfg_a3_vth_e"]:
 			hName = "hDark_%02d_%02d_%02d_%02d_%s" % (portID, slaveID, chipID, channelID, thresholdName)
 			hTitle = "Dark (%02d %02d %02d %02d) %s" % (portID, slaveID, chipID, channelID, thresholdName)
-			darkProfiles[(portID, slaveID, chipID, channelID, thresholdName)] = ROOT.TProfile(hName, hTitle, 64, 0, 64)
-
+			darkProfiles[(portID, slaveID, chipID, channelID, thresholdName)] = ROOT.TGraph()
+                        darkProfiles[(portID, slaveID, chipID, channelID, thresholdName)].SetName(hName)
+                        
 	inputFile = open(args.inputFilePrefix + "_dark.tsv")
 	for line in inputFile:
 		line = normalizeAndSplit(line)
@@ -132,13 +136,13 @@ def main(argv):
 		thresholdName = line[4]
 		thresholdValue = int(line[5])
 		v = float(line[6])
-		darkProfiles[ (portID, slaveID, chipID, channelID, thresholdName)].Fill(thresholdValue, v)
+		darkProfiles[ (portID, slaveID, chipID, channelID, thresholdName)].SetPoint(darkProfiles[ (portID, slaveID, chipID, channelID, thresholdName)].GetN(),thresholdValue, v/(1.+float(line[7])))
 	inputFile.close()
 
 
 		
 	outFile = open(args.outFileName, "w")
-
+        
 	rates =  [ 10E3, 20E3, 50E3, 100E3 ]
 
 	fields = [ "portID", "slaveID", "chipID", "channelID" ]
@@ -203,6 +207,10 @@ def main(argv):
 		fields += [ str(v) for v in [zero_T1, zero_T2,  zero_E] ]
 		fields += [ str(v) for v in [noise_T1, noise_T2,  noise_E] ]
 		outFile.write(("\t").join(fields) + "\n")
+        
+		for thresholdName in ["cfg_a3_vth_t1", "cfg_a3_vth_t2", "cfg_a3_vth_e"]:
+                        noiseProfiles[ (portID, slaveID, chipID, channelID, thresholdName)].Write()
+                        darkProfiles[ (portID, slaveID, chipID, channelID, thresholdName)].Write()
 
 
 	for portID, slaveID, chipID in activeChips:
