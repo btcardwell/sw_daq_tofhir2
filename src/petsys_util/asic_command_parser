@@ -6,7 +6,7 @@ import bitarray
 from petsys import config, tofhir2, bitarray_utils
 
 
-def build_command(command_type, chipID, channelID, asicsConfig, print_flags, ith1, ith2, ithe):
+def build_command(command_type, chipID, channelID, asicsConfig, print_flags, vth1, vth2, vthe):
 	if command_type == "global32_write":
 		register_id = 32			# Register ID
 		register_write = True
@@ -30,12 +30,12 @@ def build_command(command_type, chipID, channelID, asicsConfig, print_flags, ith
 		register_write = True
 		cfg_class = tofhir2.AsicChannelConfig
 		cfg_value = asicsConfig[None].channelConfig[0]
-                if ith1 is not None:
-                        cfg_value.setValue("ith_t1", int(ith1))
-                if ith2 is not None:
-                        cfg_value.setValue("ith_t2", int(ith2))
-                if ithe is not None:
-                        cfg_value.setValue("ith_e", int(ithe))
+                if vth1 is not None:
+                        cfg_value.setValue("cfg_a3_vth_t1", int(vth1))
+                if vth2 is not None:
+                        cfg_value.setValue("cfg_a3_vth_t2", int(vth2))
+                if vthe is not None:
+                        cfg_value.setValue("cfg_a3_vth_e", int(vthe))
 		
 	else:
 		register_id = channelID			# Register ID
@@ -105,9 +105,9 @@ def main(argv):
 	parser.add_argument("--chip", default=0, type=int, help="Chip ID")
 	parser.add_argument("--channel", default=0, type=int, help="Channel ID")
 	parser.add_argument("--config", type=str, required=True, help="Configuration file")
-        parser.add_argument("--ith1", type=str, dest="ith1", required=False, help="ith1 value")
-        parser.add_argument("--ith2", type=str, dest="ith2", required=False, help="ith2 value")
-        parser.add_argument("--ithe", type=str, dest="ithe", required=False, help="ithe value")
+        parser.add_argument("--vth1", type=str, dest="vth1", required=False, help="vth1 value")
+        parser.add_argument("--vth2", type=str, dest="vth2", required=False, help="vth2 value")
+        parser.add_argument("--vthe", type=str, dest="vthe", required=False, help="vthe value")
 	args = parser.parse_args()
 
 	
@@ -117,13 +117,13 @@ def main(argv):
 			systemConfig.applyConfigToAsics(asicsConfig)
 
 			if args.command_type == "global32_write":
-				build_command("global32_write", args.chip, args.channel, asicsConfig, args.pf, args.ith1, args.ith2, args.ithe)
+				build_command("global32_write", args.chip, args.channel, asicsConfig, args.pf, args.vth1, args.vth2, args.vthe)
 			elif args.command_type == "channel_write":
-				build_command("channel_write", args.chip, args.channel, asicsConfig, args.pf, args.ith1, args.ith2, args.ithe)
+				build_command("channel_write", args.chip, args.channel, asicsConfig, args.pf, args.vth1, args.vth2, args.vthe)
 			else:
-				build_command("global32_write", args.chip, args.channel, asicsConfig, args.pf, args.ith1, args.ith2, args.ithe)
-				build_command("global33_write", args.chip, args.channel, asicsConfig, args.pf, args.ith1, args.ith2, args.ithe)
-				build_command("channel_write", args.chip, args.channel, asicsConfig, args.pf, args.ith1, args.ith2, args.ithe)
+				build_command("global32_write", args.chip, args.channel, asicsConfig, args.pf, args.vth1, args.vth2, args.vthe)
+				build_command("global33_write", args.chip, args.channel, asicsConfig, args.pf, args.vth1, args.vth2, args.vthe)
+				build_command("channel_write", args.chip, args.channel, asicsConfig, args.pf, args.vth1, args.vth2, args.vthe)
 	
 		
 	else:

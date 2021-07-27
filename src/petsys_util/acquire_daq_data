@@ -1,0 +1,119 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+from petsys import config
+from copy import deepcopy
+import os
+import sys
+import argparse
+import math
+import time
+import subprocess
+import json
+
+parser = argparse.ArgumentParser(description='Acquire data with DAQ')
+parser.add_argument("--config", type=str, required=True, help="Configuration file")
+#parser.add_argument("-o", type=str, dest="fileNamePrefix", required=False, help = "Data filename (prefix)")
+parser.add_argument("--vth1", type=str, dest="vth1", required=True, help="vth1 value")
+parser.add_argument("--vth2", type=str, dest="vth2", required=True, help="vth2 value")
+parser.add_argument("--vthe", type=str, dest="vthe", required=True, help="vthe value")
+parser.add_argument("--ncyc", type=str, dest="ncyc", required=True, help="number of acquisition cycles")
+parser.add_argument("--nloop", type=int, dest="nloop", required=True, help="number of runs to take with this acquisition")
+
+args = parser.parse_args()
+
+
+
+
+def acquireRun(vth1, vth2, vthe, reconfigure):
+	### open filename
+        with open('/home/data/mtd/data/tofhir2/last_run') as f:
+                run = [int(x) for x in next(f).split()]
+                print '\n===>>>  RUN: ',run[0]+1,'\n'
+                print "Working point (vth1, vth2, vthe): ", vth1, vth2, vthe
+
+        f.close()
+        os.remove('/home/data/mtd/data/tofhir2/last_run')
+        with open('/home/data/mtd/data/tofhir2/last_run','w+') as f:
+                f.write(str(run[0]+1))
+        f.close()
+        fileNamePrefix = "/home/data/mtd/data/tofhir2/raw/run%04d" % (run[0]+1)
+	
+        paramsName = "/home/data/mtd/data/tofhir2/raw/run%04d.txt" % (run[0]+1)
+        with open(paramsName,'w+') as f:
+                f.write(vth1+' '+vth2+' '+vthe+'\n')
+        f.close()
+	
+	### create TOFHIR cfg file
+	with open('/home/software/mtd-daq/btl-kcu105-ipbus/cfgTOFHIR.py', 'w') as file:
+	
+	        # get TOFHIR global and channel configuration
+	        command = ['python','asic_command_parser','--mode','build','--chip','1','--channel','1','--config',args.config,'--vth1',vth1,'--vth2',vth2,'--vthe',vthe]
+	        process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+	        out, err = process.communicate()
+	        if process.returncode != 0: 
+	                print("%s failed with error:\n%s" % (command,err))
+	                sys.exit(1)
+	        file.write(out)
+	        
+	file.close()
+	
+
+	if reconfigure == True:
+                command = ['python','/home/software/mtd-daq/btl-kcu105-ipbus/configTOFHIR.py']
+                process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                out, err = process.communicate()
+                if process.returncode != 0: 
+                        print("%s failed with error:\n%s" % (command,err))
+                        sys.exit(1)
+                print(out)
+	
+                time.sleep(3)
+	
+	## readout TOFHIR
+	command = ['python','/home/software/mtd-daq/btl-kcu105-ipbus/readoutTOFHIR.py',fileNamePrefix,args.ncyc]
+	process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+	out, err = process.communicate()
+	if process.returncode != 0: 
+	        print("%s failed with error:\n%s" % (command,err))
+	        sys.exit(1)
+	print(out)
+        return
+
+
+
+
+def interpretThr(vth):
+        vthList = []
+        if vth == "all":
+#                vthList = [20,22,24,26,28,30,32,34,36,38,40,42,44,46,48,50]
+                vthList = [24,27,30,32,34,36,38,40,42,44]
+        else:
+                vthList = vth.split(",")
+                vthList = list(map(int,vthList))
+        return vthList
+
+
+
+
+if __name__ == "__main__":
+
+        #call acquire function
+        vth1List = interpretThr(args.vth1)
+        vth2List = interpretThr(args.vth2)
+        vtheList = interpretThr(args.vthe)
+
+        for v1 in vth1List:
+                for v2 in vth2List:
+                        for ve in vtheList:
+                                reconfigure = True
+                                for irun in range(args.nloop):
+                                        acquireRun(str(v1), str(v2), str(ve), reconfigure)
+                                        reconfigure = False
+
+        print("DONE")
+
+
+
+
+
