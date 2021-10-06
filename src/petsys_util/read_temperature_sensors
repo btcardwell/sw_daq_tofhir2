@@ -45,8 +45,8 @@ def ltc2984_read(conn, chipID, addr, n):
 
 def ltc2984_cfg_channels(conn):
 	
-	for chip in range(2):
-		for channel in range(3, 19, 2):
+	for chip in range(1):
+		for channel in [9, 7, 17, 15]:
 			addr = 0x200 + 0x04 * (channel - 1)
 			channel_cfg = 0x0000
 			channel_cfg |= (0b01111) << 27 #RTD
@@ -73,8 +73,8 @@ def ltc2984_cfg_channels(conn):
 def ltc_read_channels(conn):
 	result = []
 
-	for chip in range(2):
-		for channel in range(3, 19, 2):
+	for chip in range(1):
+		for channel in [9, 7, 17, 15]:
 			#print chip, channel
 			# start conversion
 			addr = 0x0000
@@ -98,16 +98,22 @@ def ltc_read_channels(conn):
 				status_msg = "OK"
 			else:
 				status_msg = "ERR"
-			print "CHIP %d CH %02d STATUS %03s (0x%02X) TEMP %10.3f ºC" % (chip, channel, status_msg, status, temperature)
-		
+			#print "CHIP %d CH %02d STATUS %03s (0x%02X) TEMP %10.3f ºC" % (chip, channel, status_msg, status, temperature)
+                        result.append(temperature)
+        return result
+                        
 		
 def main(argv):
 
 	conn = daqd.Connection()
 	ltc2984_cfg_channels(conn)
 	
-	ltc_read_channels(conn)
-	
+        while True:
+                temps = ltc_read_channels(conn)
+                for it in range(len(temps)):
+                                if temps[it] > 10000:
+                                                temps[it] = temps[it] - 16384.0
+                print temps
 	
 
 	return 0
