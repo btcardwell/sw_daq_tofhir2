@@ -2,6 +2,8 @@
 #define __PETSYS__RAW_READER_HPP__DEFINED__
 
 #include <EventSourceSink.hpp>
+#include <AbstractRawReader.hpp>
+
 #include <Event.hpp>
 
 #include <vector>
@@ -9,7 +11,7 @@
 static const unsigned MAX_NUMBER_CHANNELS = 4194304;
 
 namespace PETSYS {
-	class RawReader : public EventStream {
+	class RawReader : public AbstractRawReader {
 	public:
 		~RawReader();
 		static RawReader *openFile(const char *fnPrefix);
