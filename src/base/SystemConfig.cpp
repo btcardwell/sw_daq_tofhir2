@@ -203,8 +203,8 @@ static unsigned MAKE_GID(unsigned long portID, unsigned long slaveID, unsigned l
 	unsigned long gChannelID = 0;
 	gChannelID |= channelID;
 	gChannelID |= (chipID << 5);
-	gChannelID |= (slaveID << 11);
-	gChannelID |= (portID << 16);
+	gChannelID |= (slaveID << 6);
+	gChannelID |= (portID << 10);
 	return gChannelID;
 }
 

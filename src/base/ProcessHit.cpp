@@ -1,5 +1,7 @@
 #include "ProcessHit.hpp"
 #include <math.h>
+#include <iostream>
+
 using namespace PETSYS;
 
 ProcessHit::ProcessHit(SystemConfig *systemConfig, EventStream *eventStream, EventSink<Hit> *sink) :
@@ -42,9 +44,9 @@ EventBuffer<Hit> * ProcessHit::handleEvents (EventBuffer<RawHit> *inBuffer)
 		out.raw = &in;
 		
 		uint8_t eventFlags = in.valid ? 0x0 : 0x1;
-		
+
 		if((in.channelID >> 11) == triggerID) {
-			// This event comes from the trigger
+		        // This event comes from the trigger
 			// TODO Check that this works with TOFHiR 2 firmware
 			out.time = in.time;
 			out.time -= (in.t1fine - 27) * 0.25;
@@ -120,12 +122,12 @@ EventBuffer<Hit> * ProcessHit::handleEvents (EventBuffer<RawHit> *inBuffer)
 			
 		}
 		
-			lReceived += 1;
-			if((eventFlags & 0x1) != 0) lReceivedInvalid += 1;
-			if((eventFlags & 0x2) != 0) lTDCCalibrationMissing += 1;
-			if((eventFlags & 0x4) != 0) lQDCCalibrationMissing += 1;
-			if((eventFlags & 0x8) != 0) lXYZMissing += 1;
-			if((eventFlags & 0x16) != 0) lEnergyCalibrationMissing += 1;
+		lReceived += 1;
+		if((eventFlags & 0x1) != 0) lReceivedInvalid += 1;
+		if((eventFlags & 0x2) != 0) lTDCCalibrationMissing += 1;
+		if((eventFlags & 0x4) != 0) lQDCCalibrationMissing += 1;
+		if((eventFlags & 0x8) != 0) lXYZMissing += 1;
+		if((eventFlags & 0x16) != 0) lEnergyCalibrationMissing += 1;
 
 		if(eventFlags == 0) {
 			out.valid = true;
