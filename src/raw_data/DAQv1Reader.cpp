@@ -126,17 +126,17 @@ void DAQv1Reader::readThrValues(char* inputFilePrefix, float& step1, float& step
   rawname += ".txt";
   std::ifstream inFile(rawname.c_str());
 
-  float vth1, vth2, vthe;
+  float vth1, vth2, vthe, ov;
   while (true) {
-    inFile >> vth1 >> vth2 >> vthe;
+    inFile >> ov >> vth1 >> vth2 >> vthe;
     if(inFile.eof())
       {
         break;
       }
   }
 
-  step1=vth1;
-  step2=vth2;
+  step1 = ov;
+  step2 = 10000*(vth1+1) + 100*(vth2+1) + vthe+1;
   return;
 }
 
