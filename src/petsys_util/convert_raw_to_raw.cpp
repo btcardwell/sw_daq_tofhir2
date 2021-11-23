@@ -268,7 +268,7 @@ int main(int argc, char *argv[])
 	
 	AbstractRawReader *reader;
 	if( parser_type == 1 ) {
-		reader = DAQv1Reader::openFile(inputFilePrefix, NULL);
+		reader = DAQv1Reader::openFile(inputFilePrefix, decoder_log_file);
 	}
 	else {
 		reader = RawReader::openFile(inputFilePrefix);
@@ -278,7 +278,7 @@ int main(int argc, char *argv[])
 	
 	for(int stepIndex = 0; stepIndex < reader->getNSteps(); stepIndex++) {
 	        float step1, step2;
-	        reader->readThrValues(inputFilePrefix, step2, step1);
+	        reader->readThrValues(inputFilePrefix, step1, step2);
 		printf("Processing step %d of %d: (%f, %f)\n", stepIndex+1, reader->getNSteps(), step1, step2);
 		fflush(stdout);
 		reader->processStep(stepIndex, true,

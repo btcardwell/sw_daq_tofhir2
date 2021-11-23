@@ -14,6 +14,7 @@ args = parser.parse_args()
 
 if args.mode == 'r':
     command = "./convert_raw_to_raw --daqv1 --config "+args.config+" -i /home/data/mtd/data/tofhir2/raw/run"+args.run+".rawf -o /home/data/mtd/data/tofhir2/reco/run"+args.run+"_r.root"
+    print(command)
     os.system(command)
 
 if args.mode == 's':
@@ -28,6 +29,7 @@ if args.mode == 's':
         mainCommand += " --pedestals -o /home/data/mtd/data/tofhir2/reco/run"+args.run+"_ped_s.root"
     else:
         mainCommand += " -o /home/data/mtd/data/tofhir2/reco/run"+args.run+"_s.root"
+    print(mainCommand)
     os.system(mainCommand)
 
 if args.mode == 'c':
@@ -48,4 +50,5 @@ if args.mode == 'e':
         mainCommand += " -o /home/data/mtd/data/tofhir2/reco/run"+args.run+"_e.root"
     if args.refChannel :
         mainCommand += " --refChannel "+args.refChannel
+    print(mainCommand)
     os.system(mainCommand)
