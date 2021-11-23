@@ -20,14 +20,14 @@ using namespace PETSYS;
 static unsigned ELINK_TO_CHIPID(unsigned n)
 {
        switch (n) {
-                case 4: return 0;
-                case 5: return 1;
-                case 13: return 0;
-                case 14: return 1;
-                case 19: return 0;
-                case 20: return 1;
-                case 26: return 0;
-                case 27: return 1;
+                case 4: return 1;
+                case 5: return 0;
+                case 13: return 1;
+                case 14: return 0;
+                case 19: return 1;
+                case 20: return 0;
+                case 26: return 1;
+                case 27: return 0;
 		  
 		default: return -1;
 	}
