@@ -20,51 +20,44 @@ using namespace PETSYS;
 static unsigned ELINK_TO_CHIPID(unsigned n)
 {
        switch (n) {
-                case 4: return 1;
-                case 5: return 0;
-                case 13: return 1;
-                case 14: return 0;
-                case 19: return 1;
-                case 20: return 0;
-                case 26: return 1;
-                case 27: return 0;
+                case 6: return 0;
+                case 7: return 1;
+
+                case 9: return 2;
+                case 8: return 3;
+
+                case 17: return 4;
+                case 16: return 5;
+
+                case 10: return 6;
+                case 11: return 7;
+
+                case 18: return 8;
+                case 21: return 9;
+
+                case 20: return 10;
+                case 19: return 11;
+
+                case 5: return 12;
+                case 4: return 13;
+
+                case 3: return 14;
+                case 2: return 15;
+
+                case 27: return 16;
+                case 26: return 17;
+
+                case 0: return 18;
+                case 1: return 19;
+
+                case 22: return 20;
+                case 23: return 21;
+
+                case 25: return 22;
+                case 24: return 23;
 		  
 		default: return -1;
 	}
-}
-static unsigned ELINK_TO_FEBID(unsigned n)
-{
-      switch (n) {
-                case 0: return 0;
-                case 1: return 0;
-                case 2: return 0;
-                case 3: return 0;
-                case 4: return 0;
-                case 5: return 0;
-
-                case 6: return 1;
-                case 7: return 1;
-                case 8: return 1;
-                case 9: return 1;
-                case 10: return 1;
-                case 11: return 1;
-
-                case 12: return 2;
-                case 13: return 2;
-                case 14: return 2;
-                case 15: return 2;
-                case 16: return 2;
-                case 17: return 2;
-
-                case 18: return 3;
-                case 19: return 3;
-                case 20: return 3;
-                case 21: return 3;
-                case 22: return 3;
-                case 23: return 3;
-
-                default: return -1;
-      }       
 }
 
 static const unsigned long long timetag_period = 1ULL<<32;
@@ -212,7 +205,7 @@ void DAQv1Reader::processStep(int n, bool verbose, EventSink<RawHit> *sink)
 		}
 
 		// We don't know this ELINK ID
-		if(ELINK_TO_CHIPID(elink) == -1 || ELINK_TO_FEBID(elink) == -1) {
+		if(ELINK_TO_CHIPID(elink) == -1) {
 			if(decoder_log != NULL) fprintf(decoder_log, " UNKNOWN ELINK\n");
 			continue;
 		}
@@ -267,7 +260,7 @@ void DAQv1Reader::processStep(int n, bool verbose, EventSink<RawHit> *sink)
 		// frameID is the most significant bits of the absolute time tag
 		
 		uint64_t frameID = absoluteT1 >> 10;
-		e.channelID	= (link << 10) | (ELINK_TO_FEBID(elink) << 6) | (ELINK_TO_CHIPID(elink) << 5) | ((evt >> 0) % 32);
+		e.channelID	= (link << 10) | (ELINK_TO_CHIPID(elink) << 5) | ((evt >> 0) % 32);
 
 		e.tacID		= ((evt >> 5) % 8);
 		e.t1fine	= ((evt >> 23) % 1024);

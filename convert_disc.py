@@ -22,17 +22,18 @@ def main(argv):
     index_file = open(new_prefix + ".tsv", "w")
     i = 0
     # a_file = open("sample.txt","r")
-    for portID, slaveID, chipID, channelID, baseline_T, baseline_E, zero_T1, zero_T2, zero_E, noise_T1, noise_T2, noise_E in entries:
+    for portID, slaveID, chipID, channelID, vth_t1,  vth_t2,  vth_e in entries:
+			
         portIDnew = 1
-        slaveIDnew = 3
-        # if i < 512:
-        #     slaveIDnew = 3
-        #     chipIDnew = 23
-        # if i >= 512:
-        #     slaveIDnew = 1
-        #     chipIDnew = 20
+        slaveIDnew = 6
+
+        if chipID == 6:
+		chipIDnew = 0
+       		print("something")
+        if chipID == 7:
+		chipIDnew = 1
         
-        index_file.write("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" % (portIDnew, slaveIDnew, chipID, channelID, baseline_T, baseline_E, zero_T1, zero_T2, zero_E, noise_T1, noise_T2, noise_E))
+        index_file.write("%s\t%s\t%s\t%s\t%s\t%s\t%s\n" % (portIDnew, slaveIDnew, chipIDnew, channelID, vth_t1, vth_t2, vth_e))
         i=i+1
         print "entry = %d" % i
     

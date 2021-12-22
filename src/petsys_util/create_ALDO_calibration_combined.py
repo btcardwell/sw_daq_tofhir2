@@ -15,15 +15,15 @@ list_ASIC.append(1)
 list_ALDO = ['A', 'B']
 
 map_input = OrderedDict()
-map_input[(0,2,0,'A')] = '../calibration_files/TB03/ALDO_ALDO_A_high.tsv'
-map_input[(0,2,0,'B')] = '../calibration_files/TB03/ALDO_ALDO_B_high.tsv'
-map_input[(0,2,1,'A')] = '../calibration_files/TB03/ALDO_ALDO_A_high.tsv'
-map_input[(0,2,1,'B')] = '../calibration_files/TB03/ALDO_ALDO_B_high.tsv'
+map_input[(0,2,0,'A')] = '../calibration_files/TB03/A0_ALDO_A_high.tsv'
+map_input[(0,2,0,'B')] = '../calibration_files/TB03/A0_ALDO_B_high.tsv'
+#map_input[(0,2,1,'A')] = '../calibration_files/TB03/ALDO_ALDO_A_high.tsv'
+#map_input[(0,2,1,'B')] = '../calibration_files/TB03/ALDO_ALDO_B_high.tsv'
 
-map_input[(1,3,0,'A')] = '../calibration_files/TB07/ALDO_ALDO_A_high.tsv'
-map_input[(1,3,0,'B')] = '../calibration_files/TB07/ALDO_ALDO_B_high.tsv'
-map_input[(1,3,1,'A')] = '../calibration_files/TB07/ALDO_ALDO_A_high.tsv'
-map_input[(1,3,1,'B')] = '../calibration_files/TB07/ALDO_ALDO_B_high.tsv'
+map_input[(1,3,0,'A')] = '../calibration_files/TB07/A0_ALDO_A_high.tsv'
+map_input[(1,3,0,'B')] = '../calibration_files/TB07/A0_ALDO_B_high.tsv'
+#map_input[(1,3,1,'A')] = '../calibration_files/TB07/ALDO_ALDO_A_high.tsv'
+#map_input[(1,3,1,'B')] = '../calibration_files/TB07/ALDO_ALDO_B_high.tsv'
 
 
 
