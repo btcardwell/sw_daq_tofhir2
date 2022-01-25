@@ -183,7 +183,11 @@ void DAQv1Reader::processStep(int n, bool verbose, EventSink<RawHit> *sink)
 	
 	char *text_line = new char[256];
 	size_t text_length;
+	int lineNumber = 0;
 	while(getline(&text_line, &text_length, dataFile) > 0) {
+		lineNumber += 1;
+		// Discard first 50 events which seem to have weird rx timetags
+		if(lineNumber < 50) continue;
 //		if( decoder_log ) fprintf(decoder_log, "line = '%s'\n", text_line);
 		unsigned link;
 		unsigned elink;
@@ -225,15 +229,15 @@ void DAQv1Reader::processStep(int n, bool verbose, EventSink<RawHit> *sink)
 			rx_timetag_wraps = 0;
 		}
 		else if(elink_id2 == first_elink_id) {
-			if((rx_timetag & timetag_half_period) < (last_rx_timetag & timetag_half_period)) {
+			if((rx_timetag < timetag_period/2) && (last_rx_timetag > timetag_period/2)) {
 				rx_timetag_wraps += 1;
 				wraparound = true;
 			}
 			last_rx_timetag = rx_timetag;
 		}
 
-		// Construct an absolute rx_timeag relative to the first rx_timetag in the data
-		int64_t rx_timetag2 = rx_timetag + rx_timetag_wraps * timetag_period - first_rx_timetag;
+		// Add timetag wrap arounds
+		int64_t rx_timetag2 = rx_timetag + rx_timetag_wraps * timetag_period;
 
 		// Construct an absolute event time tag
 		// First decode the event coarse time information
@@ -242,11 +246,26 @@ void DAQv1Reader::processStep(int n, bool verbose, EventSink<RawHit> *sink)
 		unsigned qcoarse	= ((evt >> 53) % 1024);
 		unsigned pcoarse	= ((evt >> 13) % 1024);
 
-		int64_t absoluteT1 = (rx_timetag2 & 0xFFFFFFFFFFFFE000ULL) | t1coarse;
+		int64_t absoluteT1 = (rx_timetag2 & 0xFFFFFFFFFFFFC000ULL) | t1coarse;
 		// Correct wrap-around of t1coarse
-		if(absoluteT1 < rx_timetag2) absoluteT1 += 0x10000;
+		if(absoluteT1 < rx_timetag2) absoluteT1 += 0x4000;
 
-		if(absoluteT1 > outBufferMaxTime) outBufferMaxTime = absoluteT1;
+		long long t1 = absoluteT1;
+		long long t2 = (t1 & 0x7FFFFFFFFFFFFC00LL) | t2coarse;
+		long long tq = (t1 & 0x7FFFFFFFFFFFFC00LL) | qcoarse;
+		long long tp = (t1 & 0x7FFFFFFFFFFFF000LL) | (pcoarse << 2);
+
+		if(t2 < t1) t2 += 1024;
+		if(tq < t1) tq += 1024;
+		if(tp >= t1) tp -= 4096;
+
+		absoluteT1 -= (first_rx_timetag & 0xFFFFFFFFFFFFC000ULL);
+		t1 -= (first_rx_timetag & 0xFFFFFFFFFFFFC000ULL);
+		t2 -= (first_rx_timetag & 0xFFFFFFFFFFFFC000ULL);
+		tq -= (first_rx_timetag & 0xFFFFFFFFFFFFC000ULL);
+		tp -= (first_rx_timetag & 0xFFFFFFFFFFFFC000ULL);
+
+		if(t1 > outBufferMaxTime) outBufferMaxTime = t1;
 		outBuffer->setTMax(outBufferMaxTime);
 
                 if((outBuffer->getSize() + 1 > outBlockSize) || ((outBufferMaxTime - outBufferMinTime) > 1099511627776ULL)) {
@@ -267,15 +286,6 @@ void DAQv1Reader::processStep(int n, bool verbose, EventSink<RawHit> *sink)
 		e.t2fine	= ((evt >> 33) % 1024);
 		e.qfine		= ((evt >> 43) % 1024);
 		e.prevEventFlags= ((evt >> 8) % 16);
-
-		long long t1 = (frameID << 10) | t1coarse;
-		long long t2 = (t1 & 0x7FFFFFFFFFFFFC00LL) | t2coarse;
-		long long tq = (t1 & 0x7FFFFFFFFFFFFC00LL) | qcoarse;
-		long long tp = (t1 & 0x7FFFFFFFFFFFF000LL) | (pcoarse << 2);
-
-		if(t2 < t1) t2 += 1024;
-		if(tq < t1) tq += 1024;
-		if(tp >= t1) tp -= 4096;
 
 		e.time = t1 - outBufferMinTime;
 		e.timeEnd = t2 - outBufferMinTime;
