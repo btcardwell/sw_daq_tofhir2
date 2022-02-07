@@ -102,6 +102,8 @@ EventBuffer<Hit> * ProcessHit::handleEvents (EventBuffer<RawHit> *inBuffer)
 
 				// Subtract the pedestal from the ASIC's raw QDC measurement
 				out.energy = in.qfine - pedestal;
+
+				// fprintf(stderr, "DEBUG %8.4f %8.4f, %8.4f %8.4f\n", ti, pedestal, cq.p0, cq.p1);
 				
 				if(cq.p1 == 0) eventFlags |= 0x4;
 		
