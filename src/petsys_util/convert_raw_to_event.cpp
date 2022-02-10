@@ -42,6 +42,7 @@ private:
 	// ROOT Tree fields
 	float		brStep1;
 	float		brStep2;
+	float		brAcquisitionTime;
         unsigned short  brPrevEventFlags;
         long long       brPrevEventTime;
         double          brTimeLast;
@@ -109,6 +110,7 @@ public:
 			hData = new TTree("data", "Event List", 2);
 			hData->Branch("step1", &brStep1, bs);
 			hData->Branch("step2", &brStep2, bs);
+			hData->Branch("acquisitionTime", &brAcquisitionTime, bs);
                         hData->Branch("prevEventFlags", &brPrevEventFlags, bs);
                         hData->Branch("prevEventTime", &brPrevEventTime, bs);
                         hData->Branch("timeLast", &brTimeLast, bs);
@@ -183,7 +185,7 @@ public:
 		}
 	};
 	
-  void addEvents(float step1, float step2,EventBuffer<GammaPhoton> *buffer, bool coincidence, int refChannel, bool pedestals) {
+  void addEvents(float step1, float step2, float acquisitionTime,EventBuffer<GammaPhoton> *buffer, bool coincidence, int refChannel, bool pedestals) {
 		bool writeMultipleHits = false;
                 
 		double Tps = 1E12/frequency;
@@ -235,6 +237,7 @@ public:
 				if (fileType == FILE_ROOT){
 					brStep1 = step1;
 					brStep2 = step2;
+					brAcquisitionTime = acquisitionTime;
 					
 					if( channelCount[chID] == 0 )
                                         {
@@ -299,18 +302,19 @@ private:
 	DataFileWriter *dataFileWriter;
 	float step1;
 	float step2;
+        float acquisitionTime;
         bool coincidence;
         int refChannel;
         bool pedestals;
 public:
-         WriteHelper(DataFileWriter *dataFileWriter, float step1, float step2, bool coincidence, int refChannel, bool pedestals, EventSink<GammaPhoton> *sink) :
+        WriteHelper(DataFileWriter *dataFileWriter, float step1, float step2, float acquisitionTime, bool coincidence, int refChannel, bool pedestals, EventSink<GammaPhoton> *sink) :
 		OverlappedEventHandler<GammaPhoton, GammaPhoton>(sink, true),
-		dataFileWriter(dataFileWriter), step1(step1), step2(step2), coincidence(coincidence), refChannel(refChannel), pedestals(pedestals)
+		dataFileWriter(dataFileWriter), step1(step1), step2(step2), acquisitionTime(acquisitionTime), coincidence(coincidence), refChannel(refChannel), pedestals(pedestals)
 	{
 	};
 	
 	EventBuffer<GammaPhoton> * handleEvents(EventBuffer<GammaPhoton> *buffer) {
-          dataFileWriter->addEvents(step1, step2, buffer, coincidence, refChannel, pedestals);
+          dataFileWriter->addEvents(step1, step2, acquisitionTime, buffer, coincidence, refChannel, pedestals);
 		return buffer;
 	};
 };
@@ -439,15 +443,15 @@ int main(int argc, char *argv[])
 	DataFileWriter *dataFileWriter = new DataFileWriter(outputFileName, reader->getFrequency(), fileType, hitLimitToWrite, eventFractionToWrite, coincidence, refChannel, pedestalFile);
 	
 	for(int stepIndex = 0; stepIndex < reader->getNSteps(); stepIndex++) {
-		float step1, step2;
-		reader->readThrValues(inputFilePrefix, step1, step2);
+	        float step1, step2, acquisitionTime;
+		reader->readThrValues(inputFilePrefix, step1, step2, acquisitionTime);
 		printf("Processing step %d of %d: (%f, %f)\n", stepIndex+1, reader->getNSteps(), step1, step2);
 		fflush(stdout);
 		reader->processStep(stepIndex, true,
 				new CoarseSorter(
 				new ProcessHit(config, reader,
 				new SimpleGrouper(config,
-                                new WriteHelper(dataFileWriter, step1, step2, coincidence, refChannel, pedestals,
+				new WriteHelper(dataFileWriter, step1, step2, acquisitionTime, coincidence, refChannel, pedestals,
 				new NullSink<GammaPhoton>()
 				)))));
 		

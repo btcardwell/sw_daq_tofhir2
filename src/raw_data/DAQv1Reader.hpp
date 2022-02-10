@@ -20,7 +20,7 @@ namespace PETSYS {
 		int getNSteps();
 		void getStepValue(int n, float &step1, float &step2);
 		void processStep(int n, bool verbose, EventSink<RawHit> *pipeline);
-		void readThrValues(char* inputFilePrefix, float& step1, float& step2);
+	        void readThrValues(char* inputFilePrefix, float& step1, float& step2, float& acquisitionTime);
 		void processLastStep(bool verbose, EventSink<RawHit> *pipeline);
 
 	private:

@@ -389,8 +389,8 @@ int main(int argc, char *argv[])
 	DataFileWriter *dataFileWriter = new DataFileWriter(outputFileName, reader->getFrequency(), fileType, hitLimitToWrite, eventFractionToWrite);
 	
 	for(int stepIndex = 0; stepIndex < reader->getNSteps(); stepIndex++) {
-		float step1, step2;
-		reader->readThrValues(inputFilePrefix, step1, step2);
+	        float step1, step2, acquisitionTime;
+		reader->readThrValues(inputFilePrefix, step1, step2, acquisitionTime);
 		printf("Processing step %d of %d: (%f, %f)\n", stepIndex+1, reader->getNSteps(), step1, step2);
 		fflush(stdout);
 		reader->processStep(stepIndex, true,

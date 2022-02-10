@@ -14,7 +14,7 @@ namespace PETSYS {
 		virtual int getNSteps() = 0;
 		virtual void getStepValue(int n, float &step1, float &step2) = 0;
 		virtual void processStep(int n, bool verbose, EventSink<RawHit> *pipeline) = 0;
-		virtual void readThrValues(char* inputFilePrefix, float& step1, float& step2) {};
+	        virtual void readThrValues(char* inputFilePrefix, float& step1, float& step2, float& acquisitionTime) {};
 	};
 }
 

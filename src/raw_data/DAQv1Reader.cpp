@@ -12,7 +12,8 @@
 #include <ctype.h>
 #include <fstream>
 #include <iostream>
-
+#include <sstream>
+#include <vector>
 
 using namespace std;
 using namespace PETSYS;
@@ -111,7 +112,7 @@ void DAQv1Reader::getStepValue(int n, float &step1, float &step2)
 	step2 = 0;
 }
 
-void DAQv1Reader::readThrValues(char* inputFilePrefix, float& step1, float& step2)
+void DAQv1Reader::readThrValues(char* inputFilePrefix, float& step1, float& step2, float& acquisitionTime)
 {
   std::string inputFilePrefixString(inputFilePrefix);
   std::size_t lastindex = inputFilePrefixString.find_last_of(".");
@@ -120,13 +121,26 @@ void DAQv1Reader::readThrValues(char* inputFilePrefix, float& step1, float& step
   std::ifstream inFile(rawname.c_str());
 
   float vth1, vth2, vthe, ov;
-  while (true) {
-    inFile >> ov >> vth1 >> vth2 >> vthe;
-    if(inFile.eof())
-      {
-        break;
-      }
-  }
+  acquisitionTime = -99;
+  std::vector<float> paramsVec;
+  for (std::string line, word; std::getline(inFile, line); )
+    {
+      std::istringstream iss(line);
+
+      while (iss >> word)
+	{
+	  paramsVec.push_back(std::stof(word));
+	}
+
+      ov = paramsVec[0];
+      vth1 = paramsVec[1];
+      vth2 = paramsVec[2];
+      vthe = paramsVec[3];
+      if(paramsVec.size() > 4)
+	{
+	  acquisitionTime = paramsVec[4];
+	}
+    }
 
   step1 = ov;
   step2 = 10000*(vth1+1) + 100*(vth2+1) + vthe+1;
