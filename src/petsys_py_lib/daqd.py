@@ -321,8 +321,6 @@ class Connection:
 			sys.exit(1)
 				
 				
-			
-
 
 		# Disable everything
 		self.setTestPulseNone()
@@ -365,8 +363,26 @@ class Connection:
 		for portID, slaveID in self.getActiveFEBDs():
 			tdc_clk_div, ddr, tx_nlinks = self.__getAsicLinkConfiguration(portID, slaveID)
 			gctx = self.__asic_module.AsicGlobalConfigTX()
-			gctx.setValue("c_tx_mode", ddr and 0b1000 or 0b0000)
-			#gctx.setValue("c_tx_mode", 0x0)
+			c_tx_mode = 0b0000
+
+			# Select DDR mode
+			if ddr:
+				c_tx_mode |= 0b1000
+			else:
+				c_tx_mode |= 0b0000
+
+			# Select primary/secondary TX
+			if system_mode & 0x300 == 0x000:
+				c_tx_mode |= 0b0000
+			elif system_mode & 0x300 == 0x100:
+				c_tx_mode |= 0b0100
+
+			gctx.setValue("c_tx_mode", c_tx_mode)
+
+			# Select dual TX (for TOFHiR 2B onwards only)
+			if (system_mode & 0xF >= 0x3) and (system_mode & 0x300 == 0x200):
+				gctx.setValue("c_dual", 1)
+
 			gctx.setValue("c_tx_clps", 1023)
 			
 			
@@ -1289,6 +1305,84 @@ class Connection:
 		self.checkAsicRx()
 
 		return None
+
+        ## Acquires data and decodes it into a bytes buffer
+        # @param acquisitionTime Acquisition time in seconds
+	def acquireAsBytes(self, acquisitionTime):
+		frameLength = 1024.0 / self.__systemFrequency
+		nRequiredFrames = int(acquisitionTime / frameLength)
+
+ 		self.__synchronizeDataToConfig()
+		wrPointer, rdPointer = (0, 0)
+		while wrPointer == rdPointer:
+			wrPointer, rdPointer = self.__getDataFrameWriteReadPointer()
+
+		bs = self.__shm.getSizeInFrames()
+		index = rdPointer % bs
+		startFrame = self.__shm.getFrameID(index)
+		stopFrame = startFrame + nRequiredFrames
+
+                t0 = time()
+		nBlocks = 0
+		currentFrame = startFrame
+		nFrames = 0
+		lastUpdateFrame = currentFrame
+		data = bytes()
+
+		while currentFrame < stopFrame:
+			wrPointer, rdPointer = self.__getDataFrameWriteReadPointer()
+			while wrPointer == rdPointer:
+				wrPointer, rdPointer = self.__getDataFrameWriteReadPointer()
+
+			nFramesInBlock = abs(wrPointer - rdPointer)
+			if nFramesInBlock > bs:
+				nFramesInBlock = 2*bs - nFramesInBlock
+
+                        # Don't use more frames than needed
+                        framesToTarget = stopFrame - currentFrame
+                        if nFramesInBlock > framesToTarget:
+                                nFramesInBlock = framesToTarget
+
+
+			# Do not feed more than bs/2 frame blocks to writeRaw in a single call
+			# Because the entire frame block won't be freed until writeRaw is done, we can end up in a situation
+			# where writeRaw owns all frames and daqd has no buffer space, even if writeRaw has already processed
+			# some/most of the frame block
+			if nFramesInBlock > bs/2:
+                                nFramesInBlock = bs/2
+
+                        wrPointer = (rdPointer + nFramesInBlock) % (2*bs)
+
+			#data = struct.pack(template1, step1, step2, wrPointer, rdPointer, 0)
+			#pin.write(data); pin.flush()
+
+			#data = pout.read(n2)
+			#rdPointer,  = struct.unpack(template2, data)
+
+			data += self.__shm.events_as_bytes(rdPointer, wrPointer)
+			rdPointer = wrPointer
+
+
+			index = (rdPointer + bs - 1) % bs
+			currentFrame = self.__shm.getFrameID(index)
+
+			self.__setDataFrameReadPointer(rdPointer)
+
+			nFrames = currentFrame - startFrame + 1
+			nBlocks += 1
+			if (currentFrame - lastUpdateFrame) * frameLength > 0.1:
+				t1 = time()
+				stdout.write("Python:: Acquired %d frames in %4.1f seconds, corresponding to %4.1f seconds of data (delay = %4.1f)\r" % (nFrames, t1-t0, nFrames * frameLength, (t1-t0) - nFrames * frameLength))
+				stdout.flush()
+				lastUpdateFrame = currentFrame
+		t1 = time()
+		print "Python:: Acquired %d frames in %4.1f seconds, corresponding to %4.1f seconds of data (delay = %4.1f)" % (nFrames, time()-t0, nFrames * frameLength, (t1-t0) - nFrames * frameLength)
+
+		# Check ASIC link status at end of acquisition
+		self.checkAsicRx()
+
+		return data
+
 	
 	def checkAsicRx(self):
 		bad_rx_found = False
@@ -1382,6 +1476,25 @@ class Connection:
 		return self.__synchronizeDataToConfig(clearFrames)
 
 	def __synchronizeDataToConfig(self, clearFrames=True):
+
+		targetFrameID = self.getCurrentTimeTag() / 1024
+
+		template1 = "@HH"
+		template2 = "@Q"
+		n = struct.calcsize(template1) + struct.calcsize(template2)
+		data = struct.pack(template1, 0x13, n) + struct.pack(template2, targetFrameID)
+		self.__socket.send(data)
+		data = self.__socket.recv(4)
+		assert len(data) == 4
+
+		# Set the read pointer to write pointer, in order to consume all available frames in buffer
+		wrPointer, rdPointer = self.__getDataFrameWriteReadPointer()
+		self.__setDataFrameReadPointer(wrPointer)
+		return
+
+		# WARNING
+		#: Don't actually remove code below until the new synchronization scheme has been better tested
+
 		frameLength = 1024 / self.__systemFrequency
 
 		# Check ASIC link status at start of acquisition
