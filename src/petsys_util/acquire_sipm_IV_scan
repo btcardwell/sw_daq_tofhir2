@@ -12,9 +12,9 @@ import sys
 import math
 from datetime import datetime 
 
-sys.path.append("/home/cmsdaq/Programs/Lab5015Utils/")
-#from Lab5015_utils import Keithley2450
-from Lab5015_utils import KeithleyDMM6500
+sys.path.append("/home/aang/Lab5015Utils/")
+from Lab5015_utils import Keithley2450
+#from Lab5015_utils import KeithleyDMM6500
 
 parser = argparse.ArgumentParser(description='Acquire SiPM IV scan')
 parser.add_argument("--config", type=str, required=True, help="Configuration file")
@@ -65,9 +65,9 @@ if len(activeAsics) == 0:
 #        daqd.set_hvdac_config(hvdac_config)
 
 
-#mykey = Keithley2450()
-mykey = KeithleyDMM6500()
-mykey.set_read_V()
+mykey = Keithley2450()
+#mykey = KeithleyDMM6500()
+#mykey.set_read_V()
 
 
 asicsConfig0 = deepcopy(asicsConfig)
@@ -84,8 +84,8 @@ for portID, slaveID, chipID in activeAsics:
         daqd.setAsicsConfig(cfg)
         sleep(0.1)
         
-        #(_, voltage) = mykey.meas_V()
-        voltage = mykey.read()
+        (_, voltage) = mykey.meas_V()
+        #voltage = mykey.read()
         print "ALDO off   I: %f uA" % (float(voltage)*1E06/10.)
 
 
@@ -133,8 +133,8 @@ for portID, slaveID, chipID in activeAsics:
                 it = 0
                 for _ in range(0, nMeas):
                     sleep(1)
-                    #(_, thisVolt) = mykey.meas_V()
-                    thisVolt = mykey.read()
+                    (_, thisVolt) = mykey.meas_V()
+                    #thisVolt = mykey.read()
                     thisVolt = abs(thisVolt)
                     thisCurr = float(thisVolt)*1E06/10.
                     if verbose:

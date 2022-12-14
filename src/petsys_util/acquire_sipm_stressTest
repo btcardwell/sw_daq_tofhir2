@@ -11,9 +11,9 @@ import math
 from datetime import datetime
 from ROOT import TFile
 
-sys.path.append("/home/cmsdaq/Programs/Lab5015Utils/")
-#from Lab5015_utils import Keithley2450
-from Lab5015_utils import KeithleyDMM6500
+sys.path.append("/home/aang/Lab5015Utils/")
+from Lab5015_utils import Keithley2450
+#from Lab5015_utils import KeithleyDMM6500
 from Lab5015_utils import PiLas
 
 parser = argparse.ArgumentParser(description='Acquire SiPM IV scan')
@@ -38,10 +38,10 @@ if args.verb:
 
 #---------------------------------
 # connect and configure multimeter
-#mykey = Keithley2450()
-mykey = KeithleyDMM6500()
-mykey.closeChannel(int(args.keyChannel))
-mykey.read()
+mykey = Keithley2450()
+#mykey = KeithleyDMM6500()
+#mykey.closeChannel(int(args.keyChannel))
+#mykey.read()
 las = None
 if args.laser:
     las = PiLas()
@@ -90,8 +90,8 @@ for portID, slaveID, chipID in activeAsics:
         this_volt = 0.
         
         for it in range(0,5):
-            #(_, this_volt) = mykey.meas_V()
-            this_volt = mykey.read()
+            (_, this_volt) = mykey.meas_V()
+            #this_volt = mykey.read()
             this_curr = this_volt*1E06/10.
             sleep(0.5)
             print( "ALDO off   V_meas: %.3f mV -->  I: %f uA" % (1000.*this_volt,this_curr))
@@ -135,9 +135,9 @@ for portID, slaveID, chipID in activeAsics:
 
         while True:
             this_volt = 0.
-            #(_, this_volt) = mykey.meas_V()
-            this_volt = mykey.read()
-            tihs_volt = abs(this_volt)
+            (_, this_volt) = mykey.meas_V()
+            #this_volt = mykey.read()
+            this_volt = abs(this_volt)
             this_curr = this_volt*1E06/10.
             if verbose:
                 print ("dac: %3d   V_set: %6.3f V   V_meas: %.3f mV -->  I: %f uA" % (int(dac),volt,1000.*this_volt,this_curr))

@@ -71,13 +71,13 @@ if( args.fixChannels ):
 
 run = -1
 if not args.fileNamePrefix:
-        with open('/storage/TOFHIR2/last_run') as f:
+        with open('/home/aang/tofhir-data/TOFHIR2/last_run') as f:
                 runs = [int(x) for x in next(f).split()]
                 run = str(runs[0]+1)
-                os.remove('/storage/TOFHIR2/last_run')
-                with open('/storage/TOFHIR2/last_run','w+') as f:
+                os.remove('/home/aang/tofhir-data/TOFHIR2/last_run')
+                with open('/home/aang/tofhir-data/TOFHIR2/last_run','w+') as f:
                         f.write(run)
-        args.fileNamePrefix = "/storage/TOFHIR2/raw/run%04d" % (int(run))
+        args.fileNamePrefix = "/home/aang/tofhir-data/TOFHIR2/raw/run%04d" % (int(run))
 else:
         run = args.fileNamePrefix
 
@@ -89,8 +89,8 @@ if args.pedestals:
 
 #---------------------
 # copy the config file
-os.system('cp %s /storage/TOFHIR2/raw/config_run%s.ini'%(args.config,str(run)))
-configCopy = open('/storage/TOFHIR2/raw/config_run%s.ini'%str(run), 'a')
+os.system('cp %s /home/aang/tofhir-data/TOFHIR2/raw/config_run%s.ini'%(args.config,str(run)))
+configCopy = open('/home/aang/tofhir-data/TOFHIR2/raw/config_run%s.ini'%str(run), 'a')
 configCopy.write(pprint.pformat(args))
 configCopy.write('\n')
 configCopy.close()
