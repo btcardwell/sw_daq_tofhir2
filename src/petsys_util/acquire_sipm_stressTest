@@ -214,7 +214,7 @@ if args.laser:
 # plotting
 now = datetime.now()
 this_time = now.strftime('%Y-%m-%d_%H:%M:%S')
-os.system("mkdir ../log_stressTest/%s/"%args.label)
+os.system("mkdir -p ../log_stressTest/%s/"%args.label)
 outfile_name = ("../log_stressTest/%s/IV_bv%.2f_time_%s.root"%(args.label,args.bv,this_time))
 print('saving data to: %s' % outfile_name)
 
