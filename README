@@ -21,7 +21,8 @@ Installation
 Running
 -------
 
-First, we need to start the daq daemon.
+First, we need to start the daq daemon. Make sure you have all the correct
+power to the FEB/D.
 
     $ cd ~/tofhir/sw_daq_tofhir2/build
     $ rm /tmp/d.sock
@@ -60,6 +61,6 @@ With one active ASIC connected, you should see the following:
 Now, we start the QDC, TDC, and threshold calibrations:
 
     $ cd ~/tofhir/sw_daq_tofhir2/build
-    $ mkdir ../config
-    $ cp ../config.ini ../config
-    $ sh ../configuration.template.sh
+    $ ./make_bias_calibration_table -o ../config/bias_calibration.tsv
+    $ ./make_simple_bias_settings_table --config ../config/config.ini --offset 0.0 --prebd 30 --bd 38.5 --over 3.5 -o ../config/bias_settings.tsv
+    $ sh ../configuration.template.sh ../config
