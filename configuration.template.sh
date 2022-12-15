@@ -1,8 +1,8 @@
 #!/usr/bin/sh
 DATA_DIR=$1
-CONFIG_FILE=${DATA_DIR}/config_ith1.ini
+CONFIG_FILE=${DATA_DIR}/config.ini
 
-#set -e
+set -e
 
 ./acquire_threshold_calibration --config ${CONFIG_FILE} -o ${DATA_DIR}/disc_calibration
 ./process_threshold_calibration --config ${CONFIG_FILE} -i  ${DATA_DIR}/disc_calibration -o ${DATA_DIR}/disc_calibration.tsv --root-file ${DATA_DIR}/disc_calibration.root
