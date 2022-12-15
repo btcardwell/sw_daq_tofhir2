@@ -33,4 +33,4 @@ if __name__ == '__main__':
 		    line_out = '0\t0\t%d\t%3d\t%f\n' %(asic,int(readings[0]),float(readings[1]))
 		    out.write(line_out)
 
-	output_filenames.update(output)
+	output_filenames.update((output,))
