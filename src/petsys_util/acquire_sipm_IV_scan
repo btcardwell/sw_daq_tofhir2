@@ -60,7 +60,7 @@ asicsConfig = daqd.getAsicsConfig()
 activeAsics = daqd.getActiveAsics()
 
 if len(activeAsics) == 0:
-        print "no active ASICs found. Exiting..."
+        print("no active ASICs found. Exiting...")
         exit()
 
 
@@ -120,7 +120,7 @@ for portID, slaveID, chipID in activeAsics:
 	    _, voltage = mykey.meas_V()
 	else:
 	    voltage = mykey.read()
-        print "ALDO off   I: %f uA" % (float(voltage)*1E06/10.)
+        print("ALDO off   I: %f uA" % (float(voltage)*1E06/10.))
 
 
 #--------------
@@ -174,7 +174,7 @@ for portID, slaveID, chipID in activeAsics:
                     thisVolt = abs(thisVolt)
                     thisCurr = float(thisVolt)*1E06/10.
                     if args.verbose:
-                        print ("dac: %3d   V_set: %6.3f V   V_meas: %.3f mV -->  I: %f uA" % (int(dac),volt,1000.*thisVolt,thisCurr))
+                        print("dac: %3d   V_set: %6.3f V   V_meas: %.3f mV -->  I: %f uA" % (int(dac),volt,1000.*thisVolt,thisCurr))
                         #print ("dac: %3d   V_set: %6.3f V   V_meas: %f V" % (int(dac),volt,thisVolt))
                     g_I.SetPoint(g_I.GetN(),g_I.GetN(),thisCurr)
                     #g_IV.SetPoint(g_IV.GetN(),g_IV.GetN(),thisVolt)

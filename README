@@ -97,3 +97,6 @@ scan_aldo_hv creates two tsv files for each ALDO in the current directory, and
 create_ALDO_calibration_combined combines tsv files to include all active ASICs
 and place the resulting files in dest-dir.
 
+To run an IV scan to determine the breakdown voltage of the SiPMs you can run:
+
+    $ ./acquire_sipm_IV_scan --config ../config/config.ini --aldo B --keithley-model 2450 --verbose --bvMin 36 --bvMax 39
