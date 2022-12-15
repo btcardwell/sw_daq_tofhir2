@@ -15,12 +15,17 @@ from os.path import expanduser, join
 
 sys.path.append(join(expanduser("~"),"Lab5015Utils")
 try:
-    from Lab5015_utils import Keithley2450, KeithleyDMM6500
+    from Lab5015_utils import Keithley2450
 except ImportError as e:
     print("Error: unable to import from Lab5015_utils!")
     print("Please add the directory to your PYTHONPATH environment variable.")
     print("Example: $ export PYTHONPATH=/path/to/Lab5015_utils")
     sys.exit(1)
+
+try:
+    from Lab5015_utils import KeithleyDMM6500
+except ImportError as e:
+    print("Unable to import KeithleyDMM6500 from Lab5015_utils. Skipping...")
 
 parser = argparse.ArgumentParser(description='Acquire SiPM IV scan')
 parser.add_argument("--config", type=str, required=True, help="Configuration file")
