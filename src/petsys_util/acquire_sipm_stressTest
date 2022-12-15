@@ -33,6 +33,7 @@ parser.add_argument("--verbose", default=False, action="store_true", help="set t
 parser.add_argument("--laser", dest="laser", action="store_true", help="pilot laser")
 parser.add_argument("--asic", type=int, dest="asic", required=True, help="asic id")
 parser.add_argument("--keithley-model", type=int, choices=[2450,6500], default=6500, help="Keithley model number (2450 or 6500)")
+parser.add_argument("--keithley-ip-address", type=str, default=None, help="Keithley IP address")
 
 #------------------------
 # parsing input arguments
@@ -40,10 +41,29 @@ args = parser.parse_args()
 
 #---------------------------------
 # connect and configure multimeter
-if args.keithley_model == 2450:
-    mykey = Keithley2450()
+
+if args.keithley_ip_address is None:
+    ip_address_file = join(expanduser("~"),".keithley_ip_address.txt"
+
+    if os.path.exists(ip_address_file):
+	with open(ip_address_file) as f:
+	    args.keithley_ip_address = f.read().strip()
+    else:
+	print("Must supply Keithley IP address! You can find it by going to settings and then communication")
+	sys.exit(1)
 else:
-    mykey = KeithleyDMM6500()
+    ip_address_file = join(expanduser("~"),".keithley_ip_address.txt"
+
+    with open(ip_address_file) as f:
+	f.write(args.keithley_ip_address)
+
+portname = 'TCPIP0::%s::INSTR' % args.keithley_ip_address
+print("Connecting to Keithley at ip address '%s'" % args.keithley_ip_address)
+print("To change this IP address either edit ~/.keithley_ip_address.txt or remove that file and you will be prompted next time to enter it.")
+if args.keithley_model == 2450:
+    mykey = Keithley2450(portname)
+else:
+    mykey = KeithleyDMM6500(portname)
     mykey.closeChannel(int(args.keyChannel))
     mykey.read()
 
