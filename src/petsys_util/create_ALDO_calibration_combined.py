@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import argparse
+import os
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser("script to combine aldo config files")
@@ -13,13 +14,12 @@ if __name__ == '__main__':
     for filename in args.input_filenames:
 	head, tail = os.path.split(filename)
 	root, ext = os.path.splitext(tail)
-	asic = int(root.split('_')[1][-1])
-	aldo = int(root.split('_')[-2])
-	rang = int(root.split('_')[-1])
+	print(root)
+	asic = int(root.split('_')[2][-1])
+	aldo = root.split('_')[-2]
+	rang = root.split('_')[-1]
 
-	list_rang.update(rang)
-
-	output = join(args.dest_dir,'aldo_scan_ALDO_%s_%s.tsv' % (aldo,rang))
+	output = os.path.join(args.dest_dir,'aldo_scan_ALDO_%s_%s.tsv' % (aldo,rang))
 
 	if output in output_filenames:
 	    print("appending to %s" % output)

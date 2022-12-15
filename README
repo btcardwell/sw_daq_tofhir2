@@ -86,7 +86,9 @@ You should now see the following calibration files in the config directory:
 
 Next we do the ALDO calibrations. Run the following commands and physically
 connect the mutlimeter to the outputs of ALDO A and B as directed by the
-terminal output:
+terminal output. Note that the IP address will depend on your specific setup;
+you can find it on a Keithley 2450 under MENU:Communication:IP Adress
 
     $ cd ~/tofhir/sw_daq_tofhir2/build
+    $ ./scan_aldo_hv --config ../config/config.ini -o aldo_scan --keithley-model 2450 --keithley-ip-address 10.168.233.197
 
