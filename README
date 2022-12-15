@@ -64,3 +64,26 @@ Now, we start the QDC, TDC, and threshold calibrations:
     $ ./make_bias_calibration_table -o ../config/bias_calibration.tsv
     $ ./make_simple_bias_settings_table --config ../config/config.ini --offset 0.0 --prebd 30 --bd 38.5 --over 3.5 -o ../config/bias_settings.tsv
     $ sh ../configuration.template.sh ../config
+
+You should now see the following calibration files in the config directory:
+
+    bias_calibration.tsv           qdc_calibration.idxf
+    bias_settings.tsv              qdc_calibration.modf
+    config.ini                     qdc_calibration.rawf
+    disc_calibration_00_00_00.pdf  qdc_calibration.trim
+    disc_calibration_baseline.tsv  qdc_calibration.tsv
+    disc_calibration_dark.tsv      tdc_calibration_00_00_00.pdf
+    disc_calibration_noise.tsv     tdc_calibration_00_00_00.png
+    disc_calibration.root          tdc_calibration_00_00_00.root
+    disc_calibration.tsv           tdc_calibration.bins
+    disc_settings.tsv              tdc_calibration.idxf
+    qdc_calibration_00_00_00.pdf   tdc_calibration.modf
+    qdc_calibration_00_00_00.png   tdc_calibration.rawf
+    qdc_calibration_00_00_00.root  tdc_calibration.tsv
+    qdc_calibration.bins
+
+Next we do the ALDO calibrations. Run the following commands and physically
+connect the mutlimeter to the outputs of ALDO A and B as directed by the
+terminal output:
+
+    $ cd ~/tofhir/sw_daq_tofhir2/build
