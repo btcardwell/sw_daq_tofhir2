@@ -139,7 +139,7 @@ def main(argv):
 					    _, voltage = mykey.meas_V()
 					else:
 					    voltage = mykey.read()
-                                        print which_aldo, dac, float(voltage)
+                                        print(which_aldo, dac, float(voltage))
                                         f.write("%d\t%f\n" % (dac, float(voltage)))
                                 f.close()
                         
