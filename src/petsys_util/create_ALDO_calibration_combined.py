@@ -1,32 +1,36 @@
-list_ASIC = []
-list_ASIC.append(0)
-#list_ASIC.append(2)
+#!/usr/bin/env python
+import argparse
 
-list_ALDO = ['A', 'B']
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser("script to combine aldo config files")
+    parser.add_argument("input_filenames", nargs="+", help="input filenames")
+    parser.add_argument("--dest-dir", default='.', help="destination directory")
+    args = parser.parse_args()
 
-map_input = {}
-for asic in list_ASIC:
-    map_input[asic] = {}
+    output_filenames = set()
 
-list_rang = ['low', 'high']
+    map_input = {}
+    for filename in args.input_filenames:
+	head, tail = os.path.split(filename)
+	root, ext = os.path.splitext(tail)
+	asic = int(root.split('_')[1][-1])
+	aldo = int(root.split('_')[-2])
+	rang = int(root.split('_')[-1])
 
-for rang in list_rang:
-    
-    map_input[0]['A'] = '../config_2B/T2TB_2B_0009/test_ASIC0_ALDO_A_%s.tsv'%rang
-    map_input[0]['B'] = '../config_2B/T2TB_2B_0009/test_ASIC0_ALDO_B_%s.tsv'%rang
-    #map_input[2]['A'] = '../config_2B/T2TB_2B_0009/test_ASIC2_ALDO_A_%s.tsv'%rang
-    #map_input[2]['B'] = '../config_2B/T2TB_2B_0009/test_ASIC2_ALDO_B_%s.tsv'%rang
+	list_rang.update(rang)
 
-  
-    for aldo in list_ALDO:
-        outFileName = 'aldo_scan_ALDO_%s_%s.tsv' %(aldo,rang)
-        out = open(outFileName, 'w')
-        
-        for asic in list_ASIC:
-            with open(map_input[asic][aldo], 'r') as f:
-                for line in f:
-                    print line
-                    readings = line.split()
-                    line_out = '0\t0\t%d\t%3d\t%f\n' %(asic,int(readings[0]),float(readings[1]))
-                    out.write(line_out)
-        out.close()
+	output = join(args.dest_dir,'aldo_scan_ALDO_%s_%s.tsv' % (aldo,rang))
+
+	if output in output_filenames:
+	    print("appending to %s" % output)
+	else:
+	    print("writing to %s" % output)
+
+	with open(output,"a" if output in output_filenames else "w") as out:
+	    with open(filename, 'r') as f:
+		for line in f:
+		    readings = line.split()
+		    line_out = '0\t0\t%d\t%3d\t%f\n' %(asic,int(readings[0]),float(readings[1]))
+		    out.write(line_out)
+
+	output_filenames.update(output)
