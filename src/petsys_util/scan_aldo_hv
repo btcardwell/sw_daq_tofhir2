@@ -51,7 +51,7 @@ def main(argv):
 		print("Must supply Keithley IP address! You can find it by going to settings and then communication")
 		sys.exit(1)
 	else:
-	    ip_address_file = join(expanduser("~"),".keithley_ip_address.txt"
+	    ip_address_file = join(expanduser("~"),".keithley_ip_address.txt")
 
 	    with open(ip_address_file) as f:
 		f.write(args.keithley_ip_address)
@@ -105,7 +105,7 @@ def main(argv):
                 
 		for which_aldo in  ['A', 'B']:
 		#for which_aldo in  ['A']:
-			print "Connect to ALDO %s" % which_aldo
+			print("Connect to ALDO %s" % which_aldo)
 			raw_input("Press ENTER to continue")
 	                
 			if args.keithley_model == 6500:
