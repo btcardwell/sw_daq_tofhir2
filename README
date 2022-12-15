@@ -11,6 +11,8 @@ Installation
     $ mkdir tofhir
     $ git clone https://github.com/Lab5015/sw_daq_tofhir2.git
     $ git clone https://github.com/Lab5015/Lab5015Utils.git
+    $ sudo pip install minimalmodbus==1.0.1
+    $ sudo pip install simple-pid
     $ git clone https://github.com/Lab5015/Lab5015Analysis.git
     $ cd sw_daq_tofhir2
     $ mkdir build
@@ -87,3 +89,4 @@ connect the mutlimeter to the outputs of ALDO A and B as directed by the
 terminal output:
 
     $ cd ~/tofhir/sw_daq_tofhir2/build
+

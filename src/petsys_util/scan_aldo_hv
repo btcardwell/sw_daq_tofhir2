@@ -15,7 +15,8 @@ try:
     from Lab5015_utils import Keithley2450
 except ImportError as e:
     print("Error: unable to import from Lab5015_utils!")
-    print("Please add the directory to your PYTHONPATH environment variable.")
+    print(e)
+    print("Maybe you need to add the directory to your PYTHONPATH environment variable?")
     print("Example: $ export PYTHONPATH=/path/to/Lab5015_utils")
     sys.exit(1)
 
@@ -55,11 +56,14 @@ def main(argv):
 	else:
 	    ip_address_file = join(expanduser("~"),".keithley_ip_address.txt")
 
-	    with open(ip_address_file) as f:
+	    with open(ip_address_file,"w") as f:
 		f.write(args.keithley_ip_address)
 
 	mask = config.LOAD_ALL
 	mask ^= config.LOAD_QDCMODE_MAP
+	mask ^= config.LOAD_BIAS_SETTINGS_ALDO
+	mask ^= config.LOAD_ALDO_CALIBRATION
+	mask ^= config.LOAD_MAP
 	systemConfig = config.ConfigFromFile(args.config, loadMask=mask)
 	
 	portname = 'TCPIP0::%s::INSTR' % args.keithley_ip_address
