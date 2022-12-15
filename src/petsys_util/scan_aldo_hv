@@ -7,6 +7,7 @@ import argparse
 #import serial
 from time import sleep
 from os.path import expanduser, join
+import os
 
 # Try to guess where the Lab5015Utils directory is
 sys.path.append(join(os.path.dirname(os.path.abspath(__file__)),"../..","Lab5015Utils"))
