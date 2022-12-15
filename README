@@ -97,6 +97,19 @@ scan_aldo_hv creates two tsv files for each ALDO in the current directory, and
 create_ALDO_calibration_combined combines tsv files to include all active ASICs
 and place the resulting files in dest-dir.
 
-To run an IV scan to determine the breakdown voltage of the SiPMs you can run:
+Next we apply a constant bias to the SiPMs and observe the current. If you are
+injecting light with a laser, this can be used to estimate the number of pe.
+Connect the multimeter to measure voltage across the SiPM current measurement
+resistors for ALDO A and B in turn, i.e. for ALDO A, measure between points x_A 
+and y_A as shown in the whiteboard image in TOFHIR2 for Dummies.
 
+    $ ./acquire_sipm_stressTest --config ../config/config.ini --bv 42 --ch 0 --time 10 --label test --asic 0 --aldoA --keithley-model 2450 --verbose
+    $ ./acquire_sipm_stressTest --config ../config/config.ini --bv 42 --ch 0 --time 10 --label test --asic 0 --aldoB --keithley-model 2450 --verbose
+ 
+To run an IV scan to determine the breakdown voltage of the SiPMs you can run
+the following commands. You will need to connect the multimeter to read across
+the SiPM current measurement resistor as before, and you may need to expose the
+SiPMs to light to get enough current:
+
+    $ ./acquire_sipm_IV_scan --config ../config/config.ini --aldo A --keithley-model 2450 --verbose --bvMin 36 --bvMax 39
     $ ./acquire_sipm_IV_scan --config ../config/config.ini --aldo B --keithley-model 2450 --verbose --bvMin 36 --bvMax 39
