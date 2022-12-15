@@ -1,0 +1,65 @@
+TOFHIR2 Data Taking Instructions
+================================
+
+This repository contains code to calibrate and take data from TOFHIR2 chips.
+This README has instructions for how to install, calibrate, and take data.
+
+Installation
+------------
+
+    $ cd
+    $ mkdir tofhir
+    $ git clone https://github.com/Lab5015/sw_daq_tofhir2.git
+    $ git clone https://github.com/Lab5015/Lab5015Utils.git
+    $ git clone https://github.com/Lab5015/Lab5015Analysis.git
+    $ cd sw_daq_tofhir2
+    $ mkdir build
+    $ cd build
+    $ cmake ..
+    $ make -j4
+
+Running
+-------
+
+First, we need to start the daq daemon.
+
+    $ cd ~/tofhir/sw_daq_tofhir2/build
+    $ rm /tmp/d.sock
+    $ rm /dev/shm/daqd_shm
+    $ ./daqd --socket-name /tmp/d.sock --daq-type GBE
+
+You should see the following output
+
+    Size of frame is 16384
+    Got FPGA reply
+    FrameServer::startWorker called...
+    FrameServer::startWorker exiting...
+    UDPFrameServer::runWorker starting...
+
+This command will continue running the whole time you are communicating with
+the FEB/D and/or TOFHIR. So now you should open a new terminal. Now, we can try
+to initialize the system:
+
+    $ cd ~/tofhir/sw_daq_tofhir2/build
+    $ python set_system_mode.py --mode tofhir2x
+
+or, if you are running with a TOFHIR2B:
+
+    $ python set_system_mode.py --mode tofhir2b
+
+Now, we can initialize the system:
+
+    $ ./init_system
+
+With one active ASIC connected, you should see the following:
+
+    INFO: active units on ports:  0
+    INFO: TGR unit is ( 0,  0)
+    INFO: FEB/D ( 0,  0) has  1 active ASICs: 0
+
+Now, we start the QDC, TDC, and threshold calibrations:
+
+    $ cd ~/tofhir/sw_daq_tofhir2/build
+    $ mkdir ../config
+    $ cp ../config.ini ../config
+    $ sh ../configuration.template.sh
