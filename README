@@ -100,16 +100,29 @@ and place the resulting files in dest-dir.
 Next we apply a constant bias to the SiPMs and observe the current. If you are
 injecting light with a laser, this can be used to estimate the number of pe.
 Connect the multimeter to measure voltage across the SiPM current measurement
-resistors for ALDO A and B in turn, i.e. for ALDO A, measure between points x_A 
-and y_A as shown in the whiteboard image in TOFHIR2 for Dummies.
+resistors for ALDO A and B in turn.
 
     $ ./acquire_sipm_stressTest --config ../config/config.ini --bv 42 --ch 0 --time 10 --label test --asic 0 --aldoA --keithley-model 2450 --verbose
     $ ./acquire_sipm_stressTest --config ../config/config.ini --bv 42 --ch 0 --time 10 --label test --asic 0 --aldoB --keithley-model 2450 --verbose
  
 To run an IV scan to determine the breakdown voltage of the SiPMs you can run
 the following commands. You will need to connect the multimeter to read across
-the SiPM current measurement resistor as before, and you may need to expose the
-SiPMs to light to get enough current:
+the SiPM current measurement resistors as before, and you may need to expose
+the SiPMs to light to get enough current:
 
     $ ./acquire_sipm_IV_scan --config ../config/config.ini --aldo A --keithley-model 2450 --verbose --bvMin 36 --bvMax 39
     $ ./acquire_sipm_IV_scan --config ../config/config.ini --aldo B --keithley-model 2450 --verbose --bvMin 36 --bvMax 39
+
+Based on the observed breakdown voltage, you can update ~/tofhir/sw_daq_tofhir2/config/bias_settings_aldo.tsv.
+
+We are now ready to take data. The following command will acquire data for one
+second at OV=3.5V while self-triggering on ith1:
+
+    $ python acquire_sipm_data_scan --config ../config/config.ini --time 1 --ith1 10 --ith2 1 --ithe 1 --ov 3.5 --trigger none --aldo --data-dir ../../data
+
+The data will be stored in the specified data directory, and the run number
+will be incremented automatically. You can then convert the data into a ttree
+with the following command. Note that the run number and data directory should
+be updated as needed.
+
+    $ python convert.py --config ../config/config.ini -r run0001 --mode e --data-dir ../../data/
