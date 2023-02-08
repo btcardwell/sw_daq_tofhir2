@@ -25,6 +25,11 @@ except ImportError as e:
     sys.exit(1)
 
 try:
+    from Lab5015_utils import Agilent3606A
+except ImportError as e:
+    print("Unable to import Agilent3606A from Lab5015_utils. Skipping...")
+
+try:
     from Lab5015_utils import KeithleyDMM6500
 except ImportError as e:
     print("Unable to import KeithleyDMM6500 from Lab5015_utils. Skipping...")
@@ -37,7 +42,7 @@ parser.add_argument("--aldo", type=str, dest="aldo", required=True, help="which 
 parser.add_argument("--nMeas", type=str, dest="nMeas", required=False, help="number of measurements to average")
 parser.add_argument("--label", type=str, dest="label", required=False, help="folder name")
 parser.add_argument("--verbose", default=False, action="store_true", help="set to true to display output and plots, otherwise just save to root file")
-parser.add_argument("--keithley-model", type=int, choices=[2450,6500], default=6500, help="Keithley model number (2450 or 6500)")
+parser.add_argument("--keithley-model", type=int, choices=[2450,6500,3606], default=6500, help="Keithley model number (2450, 6500, or 3606 (3606 is actually Agilent))")
 parser.add_argument("--keithley-ip-address", type=str, default=None, help="Keithley IP address")
 
 #------------------------
@@ -75,26 +80,29 @@ if len(activeAsics) == 0:
 #        daqd.set_hvdac_config(hvdac_config)
 
 
-if args.keithley_ip_address is None:
-    ip_address_file = join(expanduser("~"),".keithley_ip_address.txt")
+if args.keithley_model in [2450, 6500]:
+    if args.keithley_ip_address is None:
+        ip_address_file = join(expanduser("~"),".keithley_ip_address.txt")
 
-    if os.path.exists(ip_address_file):
-	with open(ip_address_file) as f:
-	    args.keithley_ip_address = f.read().strip()
+        if os.path.exists(ip_address_file):
+            with open(ip_address_file) as f:
+               args.keithley_ip_address = f.read().strip()
+        else:
+            print("Must supply Keithley IP address! You can find it by going to settings and then communication")
+            sys.exit(1)
     else:
-	print("Must supply Keithley IP address! You can find it by going to settings and then communication")
-	sys.exit(1)
-else:
-    ip_address_file = join(expanduser("~"),".keithley_ip_address.txt")
+        ip_address_file = join(expanduser("~"),".keithley_ip_address.txt")
+        with open(ip_address_file,"w") as f:
+            f.write(args.keithley_ip_address)
 
-    with open(ip_address_file,"w") as f:
-	f.write(args.keithley_ip_address)
+    portname = 'TCPIP0::%s::INSTR' % args.keithley_ip_address
+    print("Connecting to Keithley at ip address '%s'" % args.keithley_ip_address)
+    print("To change this IP address either edit ~/.keithley_ip_address.txt or remove that file and you will be prompted next time to enter it.")
 
-portname = 'TCPIP0::%s::INSTR' % args.keithley_ip_address
-print("Connecting to Keithley at ip address '%s'" % args.keithley_ip_address)
-print("To change this IP address either edit ~/.keithley_ip_address.txt or remove that file and you will be prompted next time to enter it.")
 if args.keithley_model == 2450:
     mykey = Keithley2450(portname)
+elif args.keithley_model == 3606:
+    mykey = Agilent3606A()
 else:
     mykey = KeithleyDMM6500(portname)
     mykey.set_read_V()
@@ -118,6 +126,8 @@ for portID, slaveID, chipID in activeAsics:
 	    # the two keithley models so we don't have to have this if
 	    # statement here.
 	    _, voltage = mykey.meas_V()
+	elif args.keithley_model == 3606:
+	    voltage = mykey.meas_V()
 	else:
 	    voltage = mykey.read()
         print("ALDO off   I: %f uA" % (float(voltage)*1E06/10.))
@@ -169,6 +179,8 @@ for portID, slaveID, chipID in activeAsics:
                     sleep(1)
 		    if args.keithley_model == 2450:
 			_, thisVolt = mykey.meas_V()
+	            elif args.keithley_model == 3606:
+	                thisVolt = mykey.meas_V()
 		    else:
 			thisVolt = mykey.read()
                     thisVolt = abs(thisVolt)
