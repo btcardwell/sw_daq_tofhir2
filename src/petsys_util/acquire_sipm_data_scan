@@ -123,8 +123,8 @@ if len(activeAsics) == 0:
         print("no active ASICs found. Exiting...")
         exit()
 else:
-        print "active ASICs found: "
-        print activeAsics
+        print("active ASICs found: ")
+        print(activeAsics)
 
 
 #--------------
@@ -254,7 +254,7 @@ for ith1 in ith1_list:
 
 
                                                 if channelID == 0:
-                                                        print("%d %d %d %d : %d,%d,%d") % (portID,slaveID,chipID,channelID,dac_setting_ith1,dac_setting_ith2,dac_setting_ithe)
+                                                        print(("%d %d %d %d : %d,%d,%d") % (portID,slaveID,chipID,channelID,dac_setting_ith1,dac_setting_ith2,dac_setting_ithe))
                                 
                                 if( args.fixChannels ):
                                         for ac in cfg.values():
@@ -302,10 +302,10 @@ for ith1 in ith1_list:
                                 if args.wait:
                                         sleep(60.)
                                         args.wait = False
-                                print "ov: %3.1f,   ith1: %2d,   ith2: %2d,   ithe: %2d" % (float(ov), int(ith1), int(ith2), int(ithe))
-                                print ">>> t1: " + str(((cfg[(0,0,0)]).channelConfig[0]).getValue("cfg_a3_ith_t1"))
-                                print ">>> t2: " + str(((cfg[(0,0,0)]).channelConfig[0]).getValue("cfg_a3_ith_t2"))
-                                print ">>> e: " + str(((cfg[(0,0,0)]).channelConfig[0]).getValue("cfg_a3_ith_e"))
+                                print("ov: %3.1f,   ith1: %2d,   ith2: %2d,   ithe: %2d" % (float(ov), int(ith1), int(ith2), int(ithe)))
+                                print(">>> t1: " + str(((cfg[(0,0,0)]).channelConfig[0]).getValue("cfg_a3_ith_t1")))
+                                print(">>> t2: " + str(((cfg[(0,0,0)]).channelConfig[0]).getValue("cfg_a3_ith_t2")))
+                                print(">>> e: " + str(((cfg[(0,0,0)]).channelConfig[0]).getValue("cfg_a3_ith_e")))
                                 daqd.acquire(args.time, float(ov), 10000*(int(ith1)+1)+100*(int(ith2)+1)+int(ithe)+1)
                                         
 
